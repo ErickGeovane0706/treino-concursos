@@ -252,8 +252,8 @@ A coluna **Fase** indica em qual etapa do [plano de implementação](plano-de-im
 - **REGRAS DE NEGÓCIO:**
   - **RN1:** É OBRIGATÓRIO QUE cada matéria possua nome e slug únicos.
   - **RN2:** É OBRIGATÓRIO QUE cada assunto pertença a exatamente uma matéria. Um assunto PODE ter um assunto pai da mesma matéria, com no máximo 3 níveis de profundidade.
-  - **RN3:** NÃO É PERMITIDO excluir matéria ou assunto que possua questões vinculadas; nesse caso, o registro deve ser inativado.
-  - **RN4:** O slug é gerado a partir do nome (minúsculas, sem acentos, palavras separadas por hífen). SE a matéria ou o assunto já tiver questões publicadas, ENTÃO o slug NÃO PODE ser alterado, pois isso quebraria endereços já indexados.
+  - **RN3:** NÃO É PERMITIDO excluir matéria ou assunto que possua questões vinculadas; nesse caso, o registro deve ser inativado. Também não é permitido excluir um assunto que tenha subassuntos (eles devem ser excluídos ou movidos antes). Ao excluir uma matéria sem questões, os assuntos dela são excluídos junto.
+  - **RN4:** O slug é gerado a partir do nome (minúsculas, sem acentos, palavras separadas por hífen). SE a matéria ou o assunto já tiver questões publicadas (inclusive as que depois foram arquivadas), ENTÃO o slug NÃO PODE ser alterado, pois isso quebraria endereços já indexados. O editor pode informar o slug; se deixar vazio, ele é gerado do nome.
 
 #### RF03. Manutenção de Bancas, Órgãos e Provas
 

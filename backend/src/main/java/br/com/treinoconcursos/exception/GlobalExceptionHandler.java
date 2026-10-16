@@ -1,5 +1,6 @@
 package br.com.treinoconcursos.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -39,6 +40,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(RegraNegocioException.class)
     public ProblemDetail tratarRegraNegocio(RegraNegocioException ex) {
         ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problema.setTitle("Violação de regra de negócio");
+        return problema;
+    }
+
+    /**
+     * Restricao do banco violada apesar das validacoes do service (ex.: dois
+     * pedidos simultaneos com o mesmo nome) -> 409, sem expor o SQL.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail tratarViolacaoDoBanco(DataIntegrityViolationException ex) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "Os dados conflitam com um registro existente. Atualize a página e tente de novo.");
         problema.setTitle("Violação de regra de negócio");
         return problema;
     }

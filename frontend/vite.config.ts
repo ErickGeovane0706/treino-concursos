@@ -1,7 +1,24 @@
 /// <reference types="vitest/config" />
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+
+// Em dev, /admin/materias/3 (rota do React Router) deve abrir o index.html do
+// painel, como o Spring fara em producao. Arquivos (com ponto) passam direto.
+function fallbackDoPainel(): Plugin {
+  return {
+    name: 'fallback-do-painel',
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        const caminho = req.url?.split('?')[0] ?? '';
+        if (caminho.startsWith('/admin/') && !caminho.split('/').pop()!.includes('.')) {
+          req.url = '/admin/index.html';
+        }
+        next();
+      });
+    },
+  };
+}
 
 // Um unico projeto Vite com varias entradas (doc/ambiente-de-desenvolvimento.md, 10.3):
 // as ilhas sao carregadas pelas paginas Thymeleaf e o painel e uma SPA em /admin/.
@@ -10,7 +27,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), fallbackDoPainel()],
     build: {
       manifest: true,
       rollupOptions: {

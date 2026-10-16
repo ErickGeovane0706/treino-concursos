@@ -66,6 +66,92 @@ export async function requisitar<T>(metodo: string, caminho: string, corpo?: unk
   return (await resposta.json()) as T;
 }
 
+// ---------- classificacoes (US10) ----------
+
+export type Esfera = 'FEDERAL' | 'ESTADUAL' | 'MUNICIPAL';
+export type Nivel = 'FUNDAMENTAL' | 'MEDIO' | 'SUPERIOR';
+
+export interface Materia {
+  id: number;
+  nome: string;
+  slug: string;
+  ativa: boolean;
+}
+
+export interface Assunto {
+  id: number;
+  idMateria: number;
+  idAssuntoPai: number | null;
+  nome: string;
+  slug: string;
+  ativo: boolean;
+  nivel: number;
+}
+
+export interface Banca {
+  id: number;
+  nome: string;
+  sigla: string;
+  slug: string;
+}
+
+export interface Orgao {
+  id: number;
+  nome: string;
+  sigla: string;
+  slug: string;
+  esfera: Esfera;
+  uf: string | null;
+}
+
+export interface Prova {
+  id: number;
+  idBanca: number;
+  siglaBanca: string;
+  idOrgao: number;
+  siglaOrgao: string;
+  ano: number;
+  cargo: string;
+  nivel: Nivel;
+  slug: string;
+}
+
+/** CRUD padrao de um recurso paginado do painel (doc/api.md, secoes 3 e 8). */
+export function recurso<T, D>(caminho: string) {
+  return {
+    listar: (busca: string, pagina: number, tamanho = 20) =>
+      requisitar<Pagina<T>>('GET', `${caminho}?busca=${encodeURIComponent(busca)}&page=${pagina}&size=${tamanho}`),
+    buscar: (id: number) => requisitar<T>('GET', `${caminho}/${id}`),
+    criar: (dados: D) => requisitar<T>('POST', caminho, dados),
+    atualizar: (id: number, dados: D) => requisitar<T>('PUT', `${caminho}/${id}`, dados),
+    excluir: (id: number) => requisitar<void>('DELETE', `${caminho}/${id}`),
+  };
+}
+
+export const materias = recurso<Materia, { nome: string; slug: string; ativa: boolean }>('/api/admin/materias');
+export const bancas = recurso<Banca, { nome: string; sigla: string; slug: string }>('/api/admin/bancas');
+export const orgaos = recurso<Orgao, { nome: string; sigla: string; slug: string; esfera: Esfera; uf: string | null }>(
+  '/api/admin/orgaos',
+);
+export const provas = recurso<
+  Prova,
+  { idBanca: number; idOrgao: number; ano: number; cargo: string; nivel: Nivel }
+>('/api/admin/provas');
+
+type DadosAssunto = { nome: string; slug: string; idAssuntoPai: number | null; ativo: boolean };
+
+export const assuntos = {
+  listar: (idMateria: number) => requisitar<Assunto[]>('GET', `/api/admin/materias/${idMateria}/assuntos`),
+  buscar: (idMateria: number, id: number) =>
+    requisitar<Assunto>('GET', `/api/admin/materias/${idMateria}/assuntos/${id}`),
+  criar: (idMateria: number, dados: DadosAssunto) =>
+    requisitar<Assunto>('POST', `/api/admin/materias/${idMateria}/assuntos`, dados),
+  atualizar: (idMateria: number, id: number, dados: DadosAssunto) =>
+    requisitar<Assunto>('PUT', `/api/admin/materias/${idMateria}/assuntos/${id}`, dados),
+  excluir: (idMateria: number, id: number) =>
+    requisitar<void>('DELETE', `/api/admin/materias/${idMateria}/assuntos/${id}`),
+};
+
 export const api = {
   eu: () => requisitar<Usuario>('GET', '/api/auth/eu'),
   entrar: (email: string, senha: string) => requisitar<Usuario>('POST', '/api/auth/login', { email, senha }),

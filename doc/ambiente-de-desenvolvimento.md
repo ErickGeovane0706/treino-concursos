@@ -24,7 +24,7 @@ Em desenvolvimento, o backend roda pela IDE (IntelliJ) e o frontend pelo Vite (V
 | Java / Spring Boot | 21 / 4.1 | Backend: páginas (Thymeleaf), API REST, Spring Security |
 | Thymeleaf | o do Spring Boot | Renderização das páginas públicas no servidor |
 | commonmark-java + OWASP Java HTML Sanitizer | atuais | Markdown → HTML seguro (RF04 RN4, RNF01) |
-| Node.js / React / Vite / TypeScript | 22 / 19 / 8 / 5 | Ilhas públicas e SPA do painel |
+| Node.js / React / Vite / TypeScript | 22.13+ / 19 / 8 / 5 | Ilhas públicas e SPA do painel |
 | Tailwind CSS | 4 | Estilos (tokens de cor do protótipo) |
 | Vitest | atual | Testes da lógica de progresso local |
 
@@ -68,7 +68,7 @@ A lógica de progresso fica em `frontend/src/progresso/` (TypeScript puro, sem R
 
 ## 10.4 Banco de dados de desenvolvimento (Docker Compose)
 
-O `docker-compose.yml` da raiz define o serviço `db` (`postgres:17-alpine`, porta `5432`, banco `treino_concursos`, usuário e senha `postgres`, volume `postgres-data`, healthcheck). Os comandos são os mesmos do Campus Event Hub:
+O `docker-compose.yml` da raiz define o serviço `db` (`postgres:17-alpine`, porta `5432` só em `127.0.0.1`, banco `treino_concursos`, usuário e senha lidos do `.env` da raiz, volume `postgres-data`, healthcheck). A senha não tem valor padrão: sem `DB_PASSWORD` no `.env` o compose não sobe. Os comandos são os mesmos do Campus Event Hub:
 
 | Comando | Efeito |
 |---|---|

@@ -90,7 +90,7 @@ If any CRITICAL security issue is found, stop and escalate to `security-reviewer
 ### HIGH -- JPA / Relational Database
 - **N+1 query problem**: `FetchType.EAGER` on collections — use `JOIN FETCH` or `@EntityGraph` / `@NamedEntityGraph`
 - **Unbounded list endpoints**:
-  - **[SPRING]**: Returning `List<T>` without a limit. In this project pagination is by cursor (`depoisDe` + `id_questao` ascending), never `Pageable`/page number — flag `Pageable` too
+  - **[SPRING]**: Returning `List<T>` without a limit. In this project (doc/api.md, section 8) public navigation (`/api/questoes/**` and the public pages) uses a cursor (`depoisDe` + `id_questao` ascending) — flag `Pageable` there; the panel API (`/api/admin/**`) uses `Pageable` + `Page<T>` serialized VIA_DTO
   - **[QUARKUS]**: Returning `List<T>` without `PanacheQuery.page(Page.of(...))`
 - **Missing `@Modifying`**: Any `@Query` that mutates data requires `@Modifying` + `@Transactional`
 - **Dangerous cascade**: `CascadeType.ALL` with `orphanRemoval = true` — confirm intent is deliberate

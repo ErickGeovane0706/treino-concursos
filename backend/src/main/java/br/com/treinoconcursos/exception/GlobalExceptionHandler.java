@@ -43,6 +43,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problema;
     }
 
+    /** E-mail ou senha errados no login -> 401, sempre com a mesma mensagem. */
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ProblemDetail tratarCredenciaisInvalidas(CredenciaisInvalidasException ex) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problema.setTitle("Não autenticado");
+        return problema;
+    }
+
+    /** Conta bloqueada por senhas erradas (RF01 RN3) -> 423 Locked. */
+    @ExceptionHandler(ContaBloqueadaException.class)
+    public ProblemDetail tratarContaBloqueada(ContaBloqueadaException ex) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.LOCKED, ex.getMessage());
+        problema.setTitle("Conta bloqueada");
+        return problema;
+    }
+
     /**
      * Falha no @Valid de um DTO -> 400 Bad Request com mensagem fixa.
      *

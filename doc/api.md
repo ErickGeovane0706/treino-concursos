@@ -97,7 +97,7 @@ Regras das páginas:
 | Questões | `/api/admin/questoes` (+ `/publicar`, `/arquivar`, `/anular`, `/marcar-desatualizada`, `POST /api/admin/previa-markdown`) | EDITOR |
 | Simulados | `/api/admin/simulados` (+ `/publicar`, `/arquivar`) | EDITOR |
 | Reportes | `/api/admin/reportes-erro` (+ `/resolver`, `/descartar`) | EDITOR |
-| Usuários | `/api/admin/usuarios` (+ `/inativar`, `/desbloquear`, `/redefinir-senha`) | ADMIN |
+| Usuários | `/api/admin/usuarios` (+ `/inativar`, `/reativar`, `/desbloquear`, `/redefinir-senha`) | ADMIN |
 
 ## 4. Campos no JSON
 
@@ -179,9 +179,11 @@ GET /api/questoes/ids?assunto=crase&depoisDe=1240&limite=500
 
 ## 9. Autenticação e segurança
 
-- Visitantes **não** fazem login; só `/admin/**`, `/api/admin/**` e `/api/auth/eu` exigem autenticação.
+- Visitantes **não** fazem login; só `/api/admin/**` e `/api/auth/eu` exigem autenticação. `/admin/**` é só o casco estático da SPA (sem dados) e fica aberto para a tela de login carregar; quem protege os dados é a API. Requisições anônimas não criam sessão.
+- Login: `POST /api/auth/login` com `{ "email", "senha" }` → `200` com o usuário, `401` ("E-mail ou senha inválidos.", a mesma mensagem para e-mail inexistente, senha errada ou conta inativa) ou `423` (bloqueada, RF01 RN3). Logout: `POST /api/auth/logout` → `204`. No login o id da sessão e o token CSRF são trocados.
+- Senhas do painel: de 8 a 72 caracteres (72 é o limite do BCrypt). Se um usuário for inativado ou tiver o perfil alterado, a sessão dele perde o acesso na requisição seguinte.
 - Painel com **sessão** do Spring Security (cookie `HttpOnly`, `Secure`, `SameSite=Lax`), não JWT: o painel é servido pela mesma origem, então a sessão é mais simples e mais segura.
-- **CSRF ativo**: o Spring grava o cookie `XSRF-TOKEN` e a SPA envia o cabeçalho `X-XSRF-TOKEN` em toda requisição que altera dados. Os dois `POST` públicos (respostas e reportes) são isentos de CSRF, pois não usam sessão, e têm limite por IP.
+- **CSRF ativo**: o Spring grava o cookie `XSRF-TOKEN` (já na primeira resposta) e a SPA envia o cabeçalho `X-XSRF-TOKEN` em toda requisição que altera dados. Os dois `POST` públicos (respostas e reportes) são isentos de CSRF, pois não usam sessão, e têm limite por IP.
 - Perfis: `EDITOR` e `ADMIN` (RBAC, RNF01), indicados em cada endpoint no Swagger.
 
 ---

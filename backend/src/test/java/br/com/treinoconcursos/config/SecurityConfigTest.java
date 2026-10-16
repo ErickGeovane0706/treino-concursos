@@ -1,32 +1,47 @@
 package br.com.treinoconcursos.config;
 
+import br.com.treinoconcursos.repository.UsuarioRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Garante a seguranca minima do esqueleto: area publica aberta, painel
- * fechado (401) ate a issue #2 e CSRF ligado.
+ * Regras de acesso por rota (RNF01, doc/api.md secao 9), so na camada web.
+ * O fluxo de login de verdade e testado em AuthControllerTest.
  */
-@WebMvcTest
+@WebMvcTest(controllers = SecurityConfigTest.ControllerFalso.class)
 @Import({SecurityConfig.class, SecurityConfigTest.ControllerFalso.class})
 class SecurityConfigTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+    /** Usado pelo UsuarioSessaoFilter; aqui nao ha banco. */
+    @MockitoBean
+    private UsuarioRepository usuarioRepository;
+
     @Test
     void rotaPublicaFicaAbertaSemLogin() throws Exception {
         mockMvc.perform(get("/api/publico"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void cascoDaSpaDoPainelFicaAbertoParaATelaDeLogin() throws Exception {
+        mockMvc.perform(get("/admin/"))
                 .andExpect(status().isOk());
     }
 
@@ -37,9 +52,21 @@ class SecurityConfigTest {
     }
 
     @Test
-    void painelExigeAutenticacao() throws Exception {
-        mockMvc.perform(get("/admin/"))
-                .andExpect(status().isUnauthorized());
+    void editorAcessaApiDoPainel() throws Exception {
+        mockMvc.perform(get("/api/admin/questoes").with(user("editor").roles("EDITOR")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void editorNaoGerenciaUsuarios() throws Exception {
+        mockMvc.perform(get("/api/admin/usuarios").with(user("editor").roles("EDITOR")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminGerenciaUsuarios() throws Exception {
+        mockMvc.perform(get("/api/admin/usuarios").with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -48,22 +75,37 @@ class SecurityConfigTest {
                 .andExpect(status().isForbidden());
     }
 
+    /**
+     * A SPA precisa receber o cookie XSRF-TOKEN antes do primeiro POST (o login).
+     * Fica aqui porque o csrf() dos testes de integracao troca o repositorio de
+     * token da cadeia compartilhada e esconderia o cookie.
+     */
+    @Test
+    void primeiraRequisicaoRecebeOCookieCsrfLegivelPeloJavaScript() throws Exception {
+        mockMvc.perform(get("/api/publico"))
+                .andExpect(cookie().exists("XSRF-TOKEN"))
+                .andExpect(cookie().httpOnly("XSRF-TOKEN", false));
+    }
+
+    /** 401 anonimo nao cria sessao (o site publico nao usa sessao). */
+    @Test
+    void naoCriaSessaoParaVisitanteAnonimo() throws Exception {
+        mockMvc.perform(get("/api/admin/questoes"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(request().sessionAttributeDoesNotExist("SPRING_SECURITY_SAVED_REQUEST"));
+    }
+
     @RestController
     static class ControllerFalso {
 
-        @GetMapping("/api/publico")
-        public String publico() {
+        @GetMapping({"/api/publico", "/admin/", "/api/admin/questoes", "/api/admin/usuarios"})
+        public String ok() {
             return "ok";
         }
 
         @PostMapping("/api/publico")
         public String publicoPost() {
             return "ok";
-        }
-
-        @GetMapping({"/api/admin/questoes", "/admin/"})
-        public String admin() {
-            return "nao deveria chegar aqui";
         }
     }
 }

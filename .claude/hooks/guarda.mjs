@@ -41,8 +41,8 @@ if (!ignorar && textos) {
   // Em configuração o valor pode vir sem aspas; em código só conta string literal,
   // para não confundir com `senha = request.senha()` ou `senha: string`.
   const literal = ehConfig
-    ? new RegExp(nomeSegredo + String.raw`\s*[:=]\s*["']?(?!\$\{)[^\s"'$]{6,}`, 'i')
-    : new RegExp(nomeSegredo + String.raw`\s*[:=]\s*["'\x60](?!\$\{)[^"'\x60$]{6,}["'\x60]`, 'i');
+    ? new RegExp(nomeSegredo + String.raw`[ \t]*[:=][ \t]*["']?(?!\$\{)[^\s"'$]{6,}`, 'i')
+    : new RegExp(nomeSegredo + String.raw`[ \t]*[:=][ \t]*["'\x60](?!\$\{)[^"'\x60$\r\n]{6,}["'\x60]`, 'i');
   padroes.push([literal, 'senha ou chave literal (use ${VARIAVEL} vinda do .env)']);
   for (const [regex, tipo] of padroes) {
     if (regex.test(textos)) bloquear(`${tipo} em ${nome}. Segredos só no .env, nunca no código.`);

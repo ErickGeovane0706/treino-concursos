@@ -1,6 +1,7 @@
 package br.com.treinoconcursos.exception;
 
 import br.com.treinoconcursos.config.SecurityConfig;
+import br.com.treinoconcursos.repository.UsuarioRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,12 +31,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Como ainda nao ha controllers reais, o ControllerFalso abaixo so lanca as
  * excecoes, simulando um service.
  */
-@WebMvcTest
+@WebMvcTest(controllers = GlobalExceptionHandlerTest.ControllerFalso.class)
 @Import({SecurityConfig.class, GlobalExceptionHandlerTest.ControllerFalso.class})
 class GlobalExceptionHandlerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    /** Usado pelo UsuarioSessaoFilter da SecurityConfig; aqui nao ha banco. */
+    @MockitoBean
+    private UsuarioRepository usuarioRepository;
 
     @Test
     void deveRetornar404QuandoRecursoNaoEncontrado() throws Exception {

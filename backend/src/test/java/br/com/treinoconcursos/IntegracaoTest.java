@@ -11,7 +11,9 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -25,8 +27,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Base dos testes de integracao: aplicacao inteira + PostgreSQL do
  * Testcontainers + MockMvc. Todas as classes filhas usam a mesma
  * configuracao, entao o Spring sobe o contexto uma vez so.
+ *
+ * Perfil "test": sem os dados de exemplo do perfil dev. Cada teste comeca
+ * com o banco vazio. O admin inicial fica desligado: os testes nao dependem
+ * do backend/.env de quem esta rodando.
  */
-@SpringBootTest
+@SpringBootTest(properties = {"app.admin-inicial.email=", "app.admin-inicial.senha="})
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Import({TestcontainersConfiguration.class, IntegracaoTest.RelogioTeste.class})
 public abstract class IntegracaoTest {
@@ -45,9 +52,13 @@ public abstract class IntegracaoTest {
     @Autowired
     protected RelogioAjustavel relogio;
 
+    @Autowired
+    protected JdbcTemplate jdbc;
+
     @BeforeEach
     void limparBanco() {
-        usuarioRepository.deleteAll();
+        jdbc.execute("TRUNCATE alternativas, questoes, provas, orgaos, bancas, assuntos, materias, usuarios "
+                + "RESTART IDENTITY CASCADE");
         relogio.reiniciar();
     }
 

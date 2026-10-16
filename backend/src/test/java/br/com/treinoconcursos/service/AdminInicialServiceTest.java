@@ -9,7 +9,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * RF01 RN5: primeiro ADMIN criado a partir das variaveis de ambiente.
+ * RF01 RN5: primeiro ADMIN criado a partir das variaveis de ambiente quando
+ * nao existe nenhum ADMIN.
  */
 class AdminInicialServiceTest extends IntegracaoTest {
 
@@ -29,13 +30,21 @@ class AdminInicialServiceTest extends IntegracaoTest {
     }
 
     @Test
-    void naoCriaQuandoJaExisteUsuario() {
-        criarUsuario("editor@exemplo.com", Perfil.EDITOR);
+    void naoCriaQuandoJaExisteAdmin() {
+        criarUsuario("admin@exemplo.com", Perfil.ADMIN);
 
         boolean criou = servico("dono@exemplo.com", "senha-inicial-forte").criarSeNaoHouverUsuarios();
 
         assertThat(criou).isFalse();
         assertThat(usuarioRepository.count()).isEqualTo(1);
+    }
+
+    /** O autor inativo do seed de desenvolvimento nao impede o primeiro ADMIN. */
+    @Test
+    void criaMesmoQueJaExistaUmEditor() {
+        criarUsuario("editor@exemplo.com", Perfil.EDITOR);
+
+        assertThat(servico("dono@exemplo.com", "senha-inicial-forte").criarSeNaoHouverUsuarios()).isTrue();
     }
 
     @Test

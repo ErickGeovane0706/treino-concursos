@@ -12,8 +12,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * RF01 RN5: na subida, se nao ha nenhum usuario, cria o primeiro ADMIN com
+ * RF01 RN5: na subida, se nao ha nenhum ADMIN, cria o primeiro com
  * ADMIN_INICIAL_EMAIL e ADMIN_INICIAL_SENHA (do .env, nunca do codigo).
+ *
+ * Olha so para ADMIN (e nao para "nenhum usuario") porque o seed de
+ * desenvolvimento cria um autor EDITOR inativo antes desta etapa.
  */
 @Slf4j
 @Service
@@ -41,7 +44,7 @@ public class AdminInicialService implements ApplicationRunner {
     /** @return true se criou o administrador */
     @Transactional
     public boolean criarSeNaoHouverUsuarios() {
-        if (usuarioRepository.count() > 0) {
+        if (usuarioRepository.existsByPerfil(Perfil.ADMIN)) {
             return false;
         }
         if (email.isBlank() || senha.isBlank()) {

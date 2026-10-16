@@ -1,5 +1,6 @@
 package br.com.treinoconcursos.repository;
 
+import br.com.treinoconcursos.model.Perfil;
 import br.com.treinoconcursos.model.Usuario;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +18,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
     Optional<Usuario> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    boolean existsByPerfil(Perfil perfil);
 
     boolean existsByEmailAndIdNot(String email, Integer id);
 

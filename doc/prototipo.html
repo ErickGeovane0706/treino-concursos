@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Treino de Concursos – Banco de Questões</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#EEF2F7; --surface:#FFFFFF; --ink:#12203A; --muted:#5A6881; --line:#D3DBE8;
+  --brand:#1F4FD8; --brand-ink:#FFFFFF; --ok:#17794D; --ok-bg:#E2F5EA; --bad:#B8322A; --bad-bg:#FBE6E4;
+  --ad-bg:#E6EAF1; --ad-line:#B9C3D4;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1626; --surface:#18223A; --ink:#E8EDF7; --muted:#9AA8C4; --line:#2C3957;
+    --brand:#6F93FF; --brand-ink:#0B1220; --ok:#5ED39A; --ok-bg:#12372A; --bad:#FF8A80; --bad-bg:#40201F;
+    --ad-bg:#1C2640; --ad-line:#3A4868; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1626; --surface:#18223A; --ink:#E8EDF7; --muted:#9AA8C4; --line:#2C3957;
+  --brand:#6F93FF; --brand-ink:#0B1220; --ok:#5ED39A; --ok-bg:#12372A; --bad:#FF8A80; --bad-bg:#40201F;
+  --ad-bg:#1C2640; --ad-line:#3A4868; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.55 "Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--surface);border-bottom:1px solid var(--line)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0}
+.brand{font-weight:800;font-size:20px;letter-spacing:-.01em}
+.score{color:var(--muted);font-size:15px}
+.score b{color:var(--ink)}
+.filters{display:flex;gap:8px;overflow-x:auto;padding:0 0 14px;-webkit-overflow-scrolling:touch}
+.chip{flex:0 0 auto;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:600 15px/1 inherit;font-family:inherit;padding:10px 14px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.chip:focus-visible,.opt:focus-visible,.btn:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+main.wrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;padding-top:24px;padding-bottom:48px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px}
+.meta{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:15px;margin-bottom:10px}
+.bar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin-bottom:22px}
+.bar i{display:block;height:100%;background:var(--brand);transition:width .3s}
+h1{font-size:24px;line-height:1.35;font-weight:600;margin:0 0 24px;letter-spacing:-.01em}
+.opts{display:grid;gap:12px;margin:0;padding:0;list-style:none}
+.opt{width:100%;display:flex;gap:14px;align-items:flex-start;text-align:left;font:inherit;color:inherit;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:16px 18px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--brand)}
+.opt .l{flex:0 0 30px;height:30px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-weight:800;font-size:15px}
+.opt:disabled{cursor:default}
+.opt.ok{border-color:var(--ok);background:var(--ok-bg)} .opt.ok .l{background:var(--ok);color:var(--surface)}
+.opt.bad{border-color:var(--bad);background:var(--bad-bg)} .opt.bad .l{background:var(--bad);color:var(--surface)}
+.opt.dim{opacity:.55}
+.fb{margin-top:22px;padding:18px 20px;border-radius:12px;background:var(--bg)}
+.fb strong{display:block;font-size:19px;margin-bottom:6px}
+.fb.ok strong{color:var(--ok)} .fb.bad strong{color:var(--bad)}
+.fb p{margin:0;color:var(--ink)}
+.btn{display:block;width:100%;margin-top:18px;border:0;border-radius:12px;background:var(--brand);color:var(--brand-ink);font:800 18px/1 inherit;font-family:inherit;padding:18px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--brand);border:2px solid var(--brand)}
+.ad{background:var(--ad-bg);border:1.5px dashed var(--ad-line);border-radius:10px;display:grid;place-items:center;text-align:center;color:var(--muted);font-size:13px;padding:10px}
+.ad small{display:block;font-size:12px}
+.ad.side{min-height:250px;position:sticky;top:16px}
+.ad.inline{min-height:90px;margin-top:18px}
+.end{text-align:center}
+.end .big{font-size:48px;font-weight:800;margin:8px 0}
+.note{color:var(--muted);font-size:14px;margin-top:18px}
+@media (max-width:860px){
+  main.wrap{grid-template-columns:1fr}
+  .ad.side{display:none}
+  .card{padding:20px}
+  h1{font-size:21px}
+}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+.seg{display:inline-flex;background:var(--bg);border-radius:999px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;color:var(--ink);font:600 15px/1 inherit;font-family:inherit;padding:9px 16px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
+.seg button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.opt.sel{border-color:var(--brand);background:var(--bg)} .opt.sel .l{background:var(--brand);color:var(--brand-ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.mats{margin:22px 0}
+.row{display:grid;grid-template-columns:1fr 110px 44px;gap:12px;align-items:center;padding:6px 0;font-size:15px}
+.row b{text-align:right}
+.mini{height:8px;background:var(--line);border-radius:8px;overflow:hidden}
+.mini i{display:block;height:100%;background:var(--ok)}
+.gate{background:var(--bg);border-radius:12px;padding:20px;margin:8px 0 20px}
+.gate p{margin:4px 0 0;color:var(--muted)}
+.gate .btn{margin-top:14px}
+.revs{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.rev{border:1.5px solid var(--line);border-left-width:6px;border-radius:10px;padding:14px 16px}
+.rev.ok{border-left-color:var(--ok)} .rev.bad{border-left-color:var(--bad)}
+.rt{display:flex;gap:10px;align-items:flex-start}
+.tag{flex:0 0 auto;font-size:13px;font-weight:800;padding:3px 9px;border-radius:999px}
+.rev.ok .tag{background:var(--ok-bg);color:var(--ok)} .rev.bad .tag{background:var(--bad-bg);color:var(--bad)}
+.ra{color:var(--muted);font-size:15px;margin-top:6px}
+.com{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line)}
+#again{margin-bottom:0}
+.top{flex-wrap:wrap}
+.btn + .ad{margin-top:28px}
+.gate + .ad{margin:0 0 20px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">Treino de Concursos</div>
+      <div class="seg" role="group" aria-label="Modo"><button data-m="treino">Treino</button><button data-m="simulado">Simulado</button></div>
+      <div class="score" id="score" aria-live="polite"></div>
+    </div>
+    <div class="filters" id="filters" role="group" aria-label="Filtrar por matéria"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="stage" class="card" aria-live="polite"></section>
+  <!-- Anúncio lateral: no site real, cole aqui o código do AdSense -->
+  <aside class="ad side" aria-label="Publicidade"><div>Publicidade<small>300 × 250</small></div></aside>
+</main>
+
+<script>
+const Q=[
+ {m:"Português",t:"Assinale a frase correta quanto à concordância verbal.",o:["Fazem dois anos que ele se aposentou.","Haviam muitos candidatos na fila.","Houve muitos problemas durante a prova.","Devem haver soluções para o caso.","Existe muitos fiscais na sala."],c:2,e:"Haver no sentido de ocorrer é impessoal e fica no singular: “Houve”. As demais erram: “Faz dois anos”, “Havia candidatos”, “Deve haver” e “Existem fiscais”."},
+ {m:"Português",t:"Complete a frase: “Entregou o documento ___ funcionária que chegou primeiro.”",o:["a","à","á","as","às"],c:1,e:"Entregar exige a preposição “a”, e “funcionária” é feminino e aceita o artigo “a”. As duas se juntam e formam a crase: “à”."},
+ {m:"Direito Constitucional",t:"Segundo a Constituição Federal, NÃO é fundamento da República Federativa do Brasil:",o:["a soberania","a cidadania","o pluralismo político","a independência nacional","a dignidade da pessoa humana"],c:3,e:"Os fundamentos (art. 1º) são soberania, cidadania, dignidade da pessoa humana, valores sociais do trabalho e da livre iniciativa e pluralismo político. A independência nacional é princípio das relações internacionais (art. 4º)."},
+ {m:"Direito Constitucional",t:"O remédio constitucional que protege direito líquido e certo, quando não amparado por habeas corpus ou habeas data, é o:",o:["habeas corpus","ação popular","mandado de injunção","mandado de segurança","habeas data"],c:3,e:"É o mandado de segurança, previsto no art. 5º, LXIX, da Constituição Federal."},
+ {m:"Direito Administrativo",t:"Não é princípio expresso no caput do art. 37 da Constituição Federal:",o:["legalidade","impessoalidade","moralidade","supremacia do interesse público","eficiência"],c:3,e:"Os expressos são legalidade, impessoalidade, moralidade, publicidade e eficiência. A supremacia do interesse público é princípio implícito."},
+ {m:"Informática",t:"Em uma planilha, as células A1, A2 e A3 contêm 2, 4 e 6. O resultado de =MÉDIA(A1:A3) é:",o:["2","3","4","6","12"],c:2,e:"A média é (2 + 4 + 6) ÷ 3 = 4."},
+ {m:"Raciocínio Lógico",t:"Se chove, então a rua fica molhada. A rua não está molhada. Logo:",o:["choveu","não choveu","a rua vai secar","pode ter chovido","a rua está limpa"],c:1,e:"Se a consequência (rua molhada) é falsa, a condição (chover) também é falsa. É a regra da negação do consequente."},
+ {m:"Raciocínio Lógico",t:"Um produto de R$ 200 recebe 20% de desconto e, em seguida, 10% de acréscimo. O preço final é:",o:["R$ 170","R$ 176","R$ 180","R$ 184","R$ 220"],c:1,e:"200 × 0,80 = 160 e 160 × 1,10 = 176. Os percentuais não se anulam, porque incidem sobre bases diferentes."}
+];
+const MAT=["Todas",...new Set(Q.map(q=>q.m))];
+let filtro="Todas",modo="treino",lista=[],i=0,resp=null,acertos=0,feitas=0,marc=[],liberado=false,timer=null;
+const $=s=>document.querySelector(s);
+const L="ABCDE";
+const AD=t=>`<div class="ad inline" aria-label="Publicidade"><div>Publicidade<small>${t}</small></div></div>`;
+
+function montaFiltros(){
+  const f=$("#filters");f.innerHTML="";
+  MAT.forEach(m=>{
+    const b=document.createElement("button");b.className="chip";b.textContent=m;
+    b.setAttribute("aria-pressed",m===filtro);
+    b.onclick=()=>{filtro=m;montaFiltros();reinicia()};
+    f.appendChild(b);
+  });
+}
+function montaModo(){document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===modo))}
+document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{modo=b.dataset.m;montaModo();reinicia()});
+
+function reinicia(){
+  clearInterval(timer);
+  lista=Q.filter(q=>filtro==="Todas"||q.m===filtro);
+  i=0;resp=null;acertos=0;feitas=0;marc=[];liberado=false;render();
+}
+function placar(){
+  $("#score").innerHTML=modo==="treino"?(feitas?`Acertos: <b>${acertos}</b> de ${feitas}`:""):"Correção no fim";
+}
+function render(){
+  placar();
+  const s=$("#stage");
+  if(i>=lista.length){modo==="treino"?fimTreino():resultado();return}
+  const q=lista[i];
+  const opts=q.o.map((t,k)=>`<li><button class="opt${marc[i]===k?" sel":""}" data-k="${k}"><span class="l">${L[k]}</span><span>${t}</span></button></li>`).join("");
+  const ultima=i===lista.length-1;
+  const ad=(modo==="treino"&&i>0&&i%4===0)?AD("728 × 90")+'<div style="height:18px"></div>':"";
+  s.innerHTML=`${ad}<div class="meta"><span>${q.m}</span><span>Questão ${i+1} de ${lista.length}</span></div>
+  <div class="bar"><i style="width:${i/lista.length*100}%"></i></div>
+  <h1>${q.t}</h1><ul class="opts">${opts}</ul><div id="after">${modo==="simulado"?`<button class="btn" id="next" ${marc[i]===undefined?"disabled":""}>${ultima?"Finalizar simulado":"Próxima questão"}</button>${AD("728 × 90")}`:""}</div>`;
+  s.querySelectorAll(".opt").forEach(b=>b.onclick=()=>modo==="treino"?responde(+b.dataset.k):marca(+b.dataset.k));
+  if(modo==="simulado")$("#next").onclick=()=>{i++;render();window.scrollTo({top:0})};
+}
+function marca(k){
+  marc[i]=k;
+  document.querySelectorAll(".opt").forEach((b,n)=>b.classList.toggle("sel",n===k));
+  $("#next").disabled=false;
+}
+function responde(k){
+  if(resp!==null)return;
+  resp=k;const q=lista[i];const ok=k===q.c;feitas++;if(ok)acertos++;placar();
+  document.querySelectorAll(".opt").forEach((b,n)=>{
+    b.disabled=true;
+    if(n===q.c)b.classList.add("ok");else if(n===k)b.classList.add("bad");else b.classList.add("dim");
+  });
+  const ultima=i===lista.length-1;
+  $("#after").innerHTML=`<div class="fb ${ok?"ok":"bad"}"><strong>${ok?"Você acertou":"Você errou. A correta é a "+L[q.c]}</strong><p>${q.e}</p></div>
+  <button class="btn" id="next">${ultima?"Ver resultado":"Próxima questão"}</button>${AD("728 × 90")}`;
+  const n=$("#next");n.focus();
+  n.onclick=()=>{i++;resp=null;render();window.scrollTo({top:0})};
+}
+function fimTreino(){
+  const p=Math.round(acertos/lista.length*100);
+  $("#stage").innerHTML=`<div class="end"><div>Você terminou</div><div class="big">${p}%</div>
+  <p>${acertos} acertos em ${lista.length} questões</p>
+  <button class="btn" id="again">Refazer questões</button>${AD("728 × 90")}</div>`;
+  $("#again").onclick=reinicia;
+}
+function resultado(){
+  const certas=lista.map((q,n)=>marc[n]===q.c);
+  const tot=certas.filter(Boolean).length;
+  const p=Math.round(tot/lista.length*100);
+  const por={};
+  lista.forEach((q,n)=>{por[q.m]=por[q.m]||[0,0];por[q.m][1]++;if(certas[n])por[q.m][0]++});
+  const mats=Object.entries(por).map(([m,[a,b]])=>`<div class="row"><span>${m}</span><span class="mini"><i style="width:${a/b*100}%"></i></span><b>${a}/${b}</b></div>`).join("");
+  const itens=lista.map((q,n)=>`<li class="rev ${certas[n]?"ok":"bad"}"><div class="rt"><span class="tag">${certas[n]?"Certa":"Errada"}</span><span>${n+1}. ${q.t}</span></div>
+    <div class="ra">Sua resposta: <b>${marc[n]===undefined?"em branco":L[marc[n]]}</b> · Gabarito: <b>${L[q.c]}</b></div>
+    ${liberado?`<p class="com">${q.e}</p>`:""}</li>`).join("");
+  const gate=liberado?"":`<div id="gate" class="gate"><strong>Comentários detalhados</strong>
+    <p>Veja por que cada alternativa está certa ou errada.</p>
+    <button class="btn" id="ad">Assistir anúncio de 15 s e liberar</button>
+    <button class="btn ghost" id="prem">Assinar premium, sem anúncios</button></div>${AD("728 × 90")}`;
+  $("#stage").innerHTML=`<div class="end"><div>Resultado do simulado</div><div class="big">${p}%</div><p>${tot} acertos em ${lista.length} questões</p></div>
+  <div class="mats">${mats}</div>${gate}<ul class="revs">${itens}</ul>
+  <button class="btn ghost" id="again">Fazer outro simulado</button>${AD("728 × 90")}`;
+  $("#again").onclick=reinicia;
+  if(!liberado){
+    $("#ad").onclick=()=>{
+      let t=5;
+      $("#gate").innerHTML=`<div class="ad inline" style="min-height:140px"><div>Aqui roda o anúncio com recompensa<small>No protótipo dura 5 s. Libera em <b id="t">${t}</b></small></div></div>`;
+      timer=setInterval(()=>{t--;const e=$("#t");if(e)e.textContent=t;if(t<=0){clearInterval(timer);liberado=true;resultado()}},1000);
+    };
+    $("#prem").onclick=()=>{$("#gate").insertAdjacentHTML("beforeend",'<p class="note">Aqui abriria o pagamento do plano premium (não incluído no protótipo).</p>')};
+  }
+}
+montaFiltros();montaModo();reinicia();
+</script>
+</body>
+</html>

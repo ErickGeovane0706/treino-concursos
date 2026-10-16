@@ -1,0 +1,29 @@
+# Segredos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Claude Code (configuração pessoal)
+.claude/settings.local.json
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Backend
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Frontend
+node_modules/
+frontend/dist/
+coverage/
+playwright-report/
+test-results/
+
+# SO
+.DS_Store
+Thumbs.db

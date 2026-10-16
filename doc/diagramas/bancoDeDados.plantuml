@@ -1,0 +1,229 @@
+@startuml
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 5
+skinparam nodesep 50
+skinparam ranksep 70
+
+' Legenda: * = campo obrigatorio (NOT NULL) | <<UK>> = valor unico
+' Detalhes (indices, CHECKs, valores padrao): doc/banco-de-dados.md
+
+' --- ENUMS (gravados como VARCHAR + CHECK no PostgreSQL) ---
+package "Enums" <<Rectangle>> {
+    enum PerfilUsuario {
+        ADMIN
+        EDITOR
+    }
+
+    enum TipoQuestao {
+        MULTIPLA_ESCOLHA
+        CERTO_ERRADO
+    }
+
+    enum OrigemQuestao {
+        PROVA
+        AUTORAL
+    }
+
+    enum StatusQuestao {
+        RASCUNHO
+        PUBLICADA
+        ARQUIVADA
+    }
+
+    enum StatusSimulado {
+        RASCUNHO
+        PUBLICADO
+        ARQUIVADO
+    }
+
+    enum NivelEscolaridade {
+        FUNDAMENTAL
+        MEDIO
+        SUPERIOR
+    }
+
+    enum EsferaOrgao {
+        FEDERAL
+        ESTADUAL
+        MUNICIPAL
+    }
+
+    enum MotivoReporte {
+        GABARITO_ERRADO
+        ENUNCIADO_COM_ERRO
+        COMENTARIO_INCORRETO
+        QUESTAO_DESATUALIZADA
+        OUTRO
+    }
+
+    enum StatusReporte {
+        ABERTO
+        RESOLVIDO
+        DESCARTADO
+    }
+}
+
+' --- TABELAS / ENTIDADES ---
+
+entity "usuarios" as usuarios {
+    * id_usuario : INT <<PK>>
+    --
+    * nome : VARCHAR
+    * email : VARCHAR <<UK>>
+    * senha_hash : VARCHAR
+    * perfil : PerfilUsuario
+    * ativo : BOOLEAN
+    * tentativas_login : INT
+    bloqueado_ate : TIMESTAMP
+    * criado_em : TIMESTAMP
+}
+
+entity "materias" as materias {
+    * id_materia : INT <<PK>>
+    --
+    * nome : VARCHAR <<UK>>
+    * slug : VARCHAR <<UK>>
+    * ativa : BOOLEAN
+}
+
+entity "assuntos" as assuntos {
+    * id_assunto : INT <<PK>>
+    --
+    * id_materia : INT <<FK>>
+    id_assunto_pai : INT <<FK>>
+    * nome : VARCHAR
+    * slug : VARCHAR
+    * ativo : BOOLEAN
+    ..
+    <<UK>> (id_materia, slug)
+}
+
+entity "bancas" as bancas {
+    * id_banca : INT <<PK>>
+    --
+    * nome : VARCHAR <<UK>>
+    * sigla : VARCHAR <<UK>>
+    * slug : VARCHAR <<UK>>
+}
+
+entity "orgaos" as orgaos {
+    * id_orgao : INT <<PK>>
+    --
+    * nome : VARCHAR
+    * sigla : VARCHAR
+    * slug : VARCHAR <<UK>>
+    * esfera : EsferaOrgao
+    uf : CHAR(2)
+}
+
+entity "provas" as provas {
+    * id_prova : INT <<PK>>
+    --
+    * id_banca : INT <<FK>>
+    * id_orgao : INT <<FK>>
+    * ano : INT
+    * cargo : VARCHAR
+    * nivel : NivelEscolaridade
+    * slug : VARCHAR <<UK>>
+    ..
+    <<UK>> (id_banca, id_orgao, ano, cargo)
+}
+
+entity "questoes" as questoes {
+    * id_questao : INT <<PK>>
+    --
+    * id_materia : INT <<FK>>
+    id_assunto : INT <<FK>>
+    id_prova : INT <<FK>>
+    * id_autor : INT <<FK>>
+    * tipo : TipoQuestao
+    * origem : OrigemQuestao
+    * enunciado : TEXT
+    comentario : TEXT
+    * slug : VARCHAR
+    * status : StatusQuestao
+    * anulada : BOOLEAN
+    * desatualizada : BOOLEAN
+    * total_respostas : INT
+    * total_acertos : INT
+    * criado_em : TIMESTAMP
+    * atualizado_em : TIMESTAMP
+    publicado_em : TIMESTAMP
+}
+
+entity "alternativas" as alternativas {
+    * id_alternativa : INT <<PK>>
+    --
+    * id_questao : INT <<FK>>
+    * letra : CHAR(1)
+    * texto : TEXT
+    * correta : BOOLEAN
+    * total_marcacoes : INT
+    ..
+    <<UK>> (id_questao, letra)
+    <<UK>> (id_questao) WHERE correta
+}
+
+entity "simulados" as simulados {
+    * id_simulado : INT <<PK>>
+    --
+    * id_autor : INT <<FK>>
+    * titulo : VARCHAR
+    * slug : VARCHAR <<UK>>
+    descricao : TEXT
+    tempo_sugerido_min : INT
+    * status : StatusSimulado
+    * precisa_revisao : BOOLEAN
+    * criado_em : TIMESTAMP
+    publicado_em : TIMESTAMP
+}
+
+entity "simulado_questoes" as simulado_questoes {
+    * id_simulado : INT <<PK, FK>>
+    * id_questao : INT <<PK, FK>>
+    --
+    * ordem : INT
+    ..
+    <<UK>> (id_simulado, ordem)
+}
+
+entity "reportes_erro" as reportes_erro {
+    * id_reporte : INT <<PK>>
+    --
+    * id_questao : INT <<FK>>
+    * motivo : MotivoReporte
+    descricao : TEXT
+    * status : StatusReporte
+    * criado_em : TIMESTAMP
+    id_resolvido_por : INT <<FK>>
+    resolvido_em : TIMESTAMP
+    observacao_resolucao : TEXT
+}
+
+' --- RELACIONAMENTOS COM CARDINALIDADES ---
+' (as direcoes -down-, -right- e -left- so organizam o desenho)
+
+' Classificacao (US10)
+materias "1" ||-right-o{ "0..*" assuntos : "agrupa (US10)"
+assuntos "0..1" |o--o{ "0..*" assuntos : "subassunto de (US10)"
+bancas "1" ||-down-o{ "0..*" provas : "organiza (US10)"
+orgaos "1" ||-down-o{ "0..*" provas : "realiza (US10)"
+
+' Questoes (US09)
+materias "1" ||-down-o{ "0..*" questoes : "classifica (US09)"
+assuntos "0..1" |o-down-o{ "0..*" questoes : "classifica (US09)"
+provas "0..1" |o-down-o{ "0..*" questoes : "origina (US09)"
+questoes "1" ||-down-|{ "2..5" alternativas : "possui (US01 / US09)"
+usuarios "1" ||-left-o{ "0..*" questoes : "cadastra (US09)"
+
+' Simulados (US05 / US11)
+usuarios "1" ||-down-o{ "0..*" simulados : "monta (US11)"
+simulados "1" ||-down-|{ "5..100" simulado_questoes : "contem (US05 / US11)"
+questoes "1" ||-down-o{ "0..*" simulado_questoes : "compoe (US11)"
+
+' Reportes (US07 / US12)
+questoes "1" ||-down-o{ "0..*" reportes_erro : "recebe (US07)"
+usuarios "0..1" |o-down-o{ "0..*" reportes_erro : "resolve (US12)"
+
+@enduml

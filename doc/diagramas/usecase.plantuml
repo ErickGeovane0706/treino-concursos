@@ -1,0 +1,83 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Visitante\n(Concurseiro)" as visitante
+actor "Editor" as editor
+actor "Administrador" as admin
+actor "Google AdSense" as adsense <<System>>
+actor "Robô de Busca\n(Googlebot)" as robo <<System>>
+
+' Especialização: o Administrador faz tudo o que o Editor faz e também gerencia usuários
+admin --|> editor
+
+rectangle "Treino de Concursos" {
+
+    rectangle "Treino & Navegação (público, sem login)" {
+        usecase "Resolver Questão no Modo Treino\n(RF06, RF17)" as UC_Resolver
+        usecase "Filtrar e Navegar pelo Banco\n(RF07)" as UC_Filtrar
+        usecase "Continuar de Onde Parou\n(RF10)" as UC_Continuar
+        usecase "Refazer Questões Erradas\n(RF11)" as UC_Caderno
+        usecase "Reportar Erro em Questão\n(RF16)" as UC_Reportar
+
+        UC_Continuar .> UC_Resolver : <<include>>
+        UC_Caderno .> UC_Resolver : <<include>>
+        UC_Reportar .> UC_Resolver : <<extend>>
+    }
+
+    ' Publicidade & SEO: fora dos blocos para ficarem perto de quem os usa
+    usecase "Exibir Publicidade\n(RF12, RF18)" as UC_Anuncio
+    usecase "Indexar Páginas do Site\n(RF08, RF09)" as UC_Indexar
+
+    rectangle "Simulados (público, sem login)" {
+        usecase "Fazer Simulado\n(RF13)" as UC_Simulado
+        usecase "Desbloquear Comentários\ndo Simulado (RF15)" as UC_Desbloquear
+
+        UC_Desbloquear .> UC_Simulado : <<extend>>
+    }
+
+    rectangle "Painel Administrativo" {
+        usecase "Autenticar-se no Painel\n(RF01)" as UC_Auth
+        usecase "Manter Cadastro de Questões\n(RF04, RF05)" as UC_Questoes
+        usecase "Manter Classificações\n(RF02, RF03)" as UC_Classif
+        usecase "Montar Simulados\n(RF14)" as UC_Montar
+        usecase "Tratar Reportes de Erro\n(RF16)" as UC_Tratar
+        usecase "Manter Usuários do Painel\n(RF01)" as UC_Usuarios
+
+        UC_Questoes .> UC_Auth : <<include>>
+        UC_Classif .> UC_Auth : <<include>>
+        UC_Montar .> UC_Auth : <<include>>
+        UC_Tratar .> UC_Auth : <<include>>
+        UC_Usuarios .> UC_Auth : <<include>>
+    }
+
+    ' Toda página com conteúdo de treino ou simulado exibe publicidade (US15)
+    UC_Resolver .> UC_Anuncio : <<include>>
+    UC_Simulado .> UC_Anuncio : <<include>>
+}
+
+' Visitante - US01 a US07 (sem conta, progresso salvo no navegador)
+visitante --> UC_Resolver
+visitante --> UC_Filtrar
+visitante --> UC_Continuar
+visitante --> UC_Caderno
+visitante --> UC_Reportar
+visitante --> UC_Simulado
+visitante --> UC_Desbloquear
+
+' Editor - US08 a US12
+editor --> UC_Auth
+editor --> UC_Questoes
+editor --> UC_Classif
+editor --> UC_Montar
+editor --> UC_Tratar
+
+' Administrador - US13 (e, por herança, tudo do Editor)
+admin --> UC_Usuarios
+
+' Sistemas externos - US06, US14, US15
+UC_Anuncio --> adsense
+UC_Desbloquear --> adsense
+robo --> UC_Indexar
+
+@enduml

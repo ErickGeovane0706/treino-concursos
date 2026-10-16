@@ -10,6 +10,9 @@
 # Os valores vem do .env da raiz (modelo em .env.example). A senha NAO tem
 # valor padrao: sem ela o compose se recusa a subir. O repositorio e publico.
 
+# Nome fixo: nao depende do nome da pasta (volume e container sempre iguais).
+name: treino-concursos
+
 services:
   db:
     image: postgres:17-alpine

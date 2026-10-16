@@ -94,6 +94,9 @@ Regras das páginas:
 | Autenticação | `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/eu` | — |
 | Matérias e assuntos | `/api/admin/materias`, `/api/admin/materias/{id}/assuntos` | EDITOR |
 | Bancas, órgãos e provas | `/api/admin/bancas`, `/api/admin/orgaos`, `/api/admin/provas` | EDITOR |
+
+> Classificações: as listas aceitam `?busca=` (nome ou sigla; nas provas, cargo e siglas de banca e órgão) e a paginação do painel. Os assuntos de uma matéria vêm numa lista só, com `idAssuntoPai` e `nivel` (1 a 3). O campo `slug` é opcional: vazio na criação é gerado do nome (matéria e assunto) ou da sigla (banca e órgão); vazio na alteração mantém o atual. O slug da prova é sempre gerado (`banca-orgao-ano-cargo`).
+
 | Questões | `/api/admin/questoes` (+ `/publicar`, `/arquivar`, `/anular`, `/marcar-desatualizada`, `POST /api/admin/previa-markdown`) | EDITOR |
 | Simulados | `/api/admin/simulados` (+ `/publicar`, `/arquivar`) | EDITOR |
 | Reportes | `/api/admin/reportes-erro` (+ `/resolver`, `/descartar`) | EDITOR |

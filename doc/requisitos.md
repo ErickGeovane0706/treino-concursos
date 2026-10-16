@@ -244,7 +244,7 @@ A coluna **Fase** indica em qual etapa do [plano de implementação](plano-de-im
   - **RN2:** SE o perfil do usuário for EDITOR, ENTÃO o sistema PERMITE gerenciar questões, classificações, simulados e reportes, SENÃO (perfil ADMIN) PERMITE também gerenciar os usuários do painel.
   - **RN3:** SEMPRE QUE um usuário errar a senha 5 vezes seguidas, ENTÃO o sistema bloqueia a conta por 15 minutos.
   - **RN4:** NÃO É PERMITIDO QUE o último Administrador ativo seja inativado ou tenha o perfil rebaixado.
-  - **RN5:** QUANDO a aplicação iniciar sem nenhum usuário cadastrado, ENTÃO o sistema cria o primeiro Administrador a partir das variáveis de ambiente `ADMIN_INICIAL_EMAIL` e `ADMIN_INICIAL_SENHA`.
+  - **RN5:** QUANDO a aplicação iniciar sem nenhum Administrador cadastrado, ENTÃO o sistema cria o primeiro Administrador a partir das variáveis de ambiente `ADMIN_INICIAL_EMAIL` e `ADMIN_INICIAL_SENHA`.
 
 #### RF02. Manutenção de Matérias e Assuntos
 

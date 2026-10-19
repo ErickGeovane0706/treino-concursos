@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina('Política de Cookies',
+        'Quais cookies e dados do navegador o Treino de Concursos usa, para quê e como mudar sua escolha.',
+        true, ${ {} }, ~{::.conteudo})}">
+<body>
+  <article class="conteudo card texto">
+    <h1>Política de Cookies</h1>
+    <p class="atualizado">Última atualização: 19 de outubro de 2026.</p>
+
+    <p>
+      Cookies são pequenos arquivos que um site grava no seu navegador. O <strong>armazenamento local</strong>
+      (<code>localStorage</code>) é parecido, mas os dados não são enviados ao servidor. Esta página lista o que o
+      Treino de Concursos usa. Para o tratamento de dados em geral, veja a
+      <a href="/privacidade">Política de Privacidade</a>.
+    </p>
+
+    <h2>O que usamos</h2>
+    <table>
+      <thead>
+        <tr><th scope="col">Nome</th><th scope="col">De quem</th><th scope="col">Para quê</th><th scope="col">Duração</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>consentimento-anuncios</code> (cookie)</td>
+          <td>Este site</td>
+          <td>Guarda se você aceitou ou recusou anúncios personalizados, para não perguntar de novo.</td>
+          <td>1 ano</td>
+        </tr>
+        <tr>
+          <td>Progresso (armazenamento local)</td>
+          <td>Este site</td>
+          <td>Questões resolvidas, acertos, erros e onde você parou. Fica só no seu aparelho.</td>
+          <td>Até você apagar</td>
+        </tr>
+        <tr>
+          <td>Cookies do Google AdSense (ex.: <code>__gads</code>, <code>__gpi</code>, <code>__eoi</code>,
+            <code>IDE</code>)</td>
+          <td>Google</td>
+          <td>Exibir anúncios, limitar repetições, medir resultados e combater fraudes. Com o seu consentimento,
+            também personalizar os anúncios.</td>
+          <td>Até 13 meses, definida pelo Google</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      Os cookies <code>JSESSIONID</code> e <code>XSRF-TOKEN</code> existem apenas no painel interno, usado pela equipe
+      que cadastra as questões. Quem só visita o site não os recebe.
+    </p>
+
+    <h2>Como mudar sua escolha</h2>
+    <ul>
+      <li>Use o link <strong>"Preferências de cookies"</strong>, no rodapé de qualquer página, para aceitar ou recusar
+        anúncios personalizados.</li>
+      <li>Você também pode apagar ou bloquear cookies e o armazenamento local nas configurações do navegador.
+        O site continua funcionando; apenas o progresso deixa de ser guardado e a pergunta sobre anúncios volta a
+        aparecer.</li>
+      <li>Para anúncios do Google em geral, use a
+        <a href="https://adssettings.google.com/" rel="noopener">Minha Central de Anúncios</a>.</li>
+    </ul>
+  </article>
+</body>
+</html>

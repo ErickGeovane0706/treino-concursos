@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<!--/* Erros do servidor (500 etc.). Sem anuncio e noindex; nunca mostra detalhes tecnicos. */-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina('Erro no servidor', null, false, ${ {} }, ~{::.conteudo})}">
+<body>
+  <section class="conteudo card erro">
+    <p class="codigo">500</p>
+    <h1>Algo deu errado do nosso lado</h1>
+    <p>Já estamos de olho. Tente de novo em alguns instantes.</p>
+    <div class="acoes">
+      <a class="btn" href="/" th:href="${path != null ? path : '/'}">Tentar de novo</a>
+      <a class="btn ghost" href="/">Ir para o início</a>
+    </div>
+  </section>
+</body>
+</html>

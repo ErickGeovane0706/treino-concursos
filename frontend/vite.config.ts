@@ -32,6 +32,8 @@ export default defineConfig(({ mode }) => {
       manifest: true,
       rollupOptions: {
         input: {
+          // Aviso de cookies, em todas as paginas publicas (chave = caminho, igual ao manifest)
+          consentimento: 'src/consentimento/main.ts',
           'ilha-treino': 'src/ilhas/treino.tsx',
           'ilha-listagem': 'src/ilhas/listagem.tsx',
           admin: 'admin/index.html',

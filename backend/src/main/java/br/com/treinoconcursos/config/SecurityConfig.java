@@ -2,6 +2,7 @@ package br.com.treinoconcursos.config;
 
 import br.com.treinoconcursos.repository.UsuarioRepository;
 import br.com.treinoconcursos.seguranca.CsrfCookieFilter;
+import br.com.treinoconcursos.seguranca.CsrfSpaHandler;
 import br.com.treinoconcursos.seguranca.UsuarioSessaoFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -51,7 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasAnyRole("EDITOR", "ADMIN")
                         .requestMatchers("/api/auth/eu").authenticated()
                         .anyRequest().permitAll())
-                .csrf(csrf -> csrf.spa().csrfTokenRepository(csrfTokenRepository))
+                .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository).csrfTokenRequestHandler(new CsrfSpaHandler()))
                 .securityContext(contexto -> contexto.securityContextRepository(securityContextRepository))
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")

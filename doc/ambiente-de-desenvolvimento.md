@@ -50,20 +50,23 @@ O frontend é **um único projeto Vite com várias entradas** (`build.rollupOpti
 | `ilha-listagem` | `frontend/src/ilhas/listagem.tsx` | Listagens: marcar resolvidas, "Continuar", "Ocultar resolvidas" |
 | `ilha-simulado` | `frontend/src/ilhas/simulado.tsx` | Simulado e resultado (Fase 3) |
 | `admin` | `frontend/admin/index.html` | SPA do painel |
+| `consentimento` | `frontend/src/consentimento/main.ts` | Aviso de cookies (RF18 RN2), em todas as páginas públicas; sem React |
 
 A lógica de progresso fica em `frontend/src/progresso/` (TypeScript puro, sem React), testada com Vitest e compartilhada pelas ilhas.
 
 ### Desenvolvimento
 
 - `npm run dev` sobe o Vite em `http://localhost:5173`.
-- Páginas públicas: acesse **`http://localhost:8080`** (Spring). No perfil `dev`, o template base inclui os scripts direto do servidor do Vite (`http://localhost:5173/@vite/client` e `http://localhost:5173/src/ilhas/treino.tsx`), com hot reload.
+- Páginas públicas: acesse **`http://localhost:8080`** (Spring). Com `VITE_DEV_SERVER` preenchido, o layout (`templates/layout.html` + `fragmentos/vite.html`) inclui os scripts direto do servidor do Vite (`/@vite/client`, o preâmbulo do React em `src/dev/preambulo-react.ts` e as entradas da página, como `src/ilhas/treino.tsx`), com hot reload.
+- Os estilos das páginas públicas ficam em `backend/src/main/resources/static/css/site.css` (tokens do protótipo e modo escuro), sem depender do build do frontend. A fonte Public Sans é servida pelo próprio site (`static/fontes/`).
+- Nos templates, use `#site` (nome e contato) e `#vite` (scripts das ilhas), registrados pelo `SiteDialect`. Não use `@bean`: o Thymeleaf 3.1 recusa referência a bean (e qualquer `@` no texto da expressão) em `th:src`, `th:href`, `th:utext` e parâmetros de fragmento.
 - Painel: acesse **`http://localhost:5173/admin/`**. O Vite repassa `/api` para o Spring (proxy), então o cookie de sessão funciona como se fosse a mesma origem.
 
 ### Produção
 
 - `npm run build` gera `frontend/dist/` com `manifest.json`.
-- O Maven copia `frontend/dist/` para `backend/target/classes/static/` (plugin `maven-resources-plugin` ou `frontend-maven-plugin`).
-- Um helper do Thymeleaf lê o `manifest.json` e escreve o nome com hash do arquivo (`/assets/ilha-treino-3f2a1c.js`), que é cacheado por 1 ano.
+- O Maven copia `frontend/dist/` para `backend/target/classes/static/` (`maven-resources-plugin`, fase `process-resources`). Sem o build, só avisa: o site funciona, sem as ilhas.
+- O `ViteManifest` (`#vite`) lê `static/.vite/manifest.json` e escreve o nome com hash do arquivo (`/assets/ilha-treino-3f2a1c.js`), o CSS dos chunks importados e os `modulepreload`. O cache de 1 ano entra na issue #16.
 - O Spring devolve `static/admin/index.html` para qualquer rota `/admin/**` (fallback da SPA).
 
 ## 10.4 Banco de dados de desenvolvimento (Docker Compose)

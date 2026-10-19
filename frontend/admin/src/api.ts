@@ -168,3 +168,94 @@ export const api = {
   redefinirSenha: (id: number, novaSenha: string) =>
     requisitar<Usuario>('PATCH', `/api/admin/usuarios/${id}/redefinir-senha`, { novaSenha }),
 };
+
+// ---------- questoes (US09, RF04, RF05) ----------
+
+export type TipoQuestao = 'MULTIPLA_ESCOLHA' | 'CERTO_ERRADO';
+export type OrigemQuestao = 'PROVA' | 'AUTORAL';
+export type StatusQuestao = 'RASCUNHO' | 'PUBLICADA' | 'ARQUIVADA';
+export type Letra = 'A' | 'B' | 'C' | 'D' | 'E';
+
+export interface Alternativa {
+  id: number;
+  letra: Letra;
+  texto: string;
+  correta: boolean;
+  totalMarcacoes: number;
+}
+
+export interface Questao {
+  id: number;
+  idMateria: number;
+  nomeMateria: string;
+  idAssunto: number | null;
+  nomeAssunto: string | null;
+  idProva: number | null;
+  descricaoProva: string | null;
+  nomeAutor: string;
+  tipo: TipoQuestao;
+  origem: OrigemQuestao;
+  enunciado: string;
+  comentario: string | null;
+  slug: string;
+  status: StatusQuestao;
+  anulada: boolean;
+  desatualizada: boolean;
+  totalRespostas: number;
+  totalAcertos: number;
+  criadoEm: string;
+  atualizadoEm: string;
+  publicadoEm: string | null;
+  alternativas: Alternativa[];
+}
+
+export interface QuestaoResumo {
+  id: number;
+  trecho: string;
+  nomeMateria: string;
+  tipo: TipoQuestao;
+  status: StatusQuestao;
+  anulada: boolean;
+  desatualizada: boolean;
+  atualizadoEm: string;
+}
+
+export interface DadosQuestao {
+  idMateria: number;
+  idAssunto: number | null;
+  tipo: TipoQuestao;
+  origem: OrigemQuestao;
+  idProva: number | null;
+  enunciado: string;
+  comentario: string | null;
+  alternativas: { letra: Letra; texto: string | null; correta: boolean }[];
+}
+
+export interface FiltrosQuestao {
+  status: StatusQuestao | '';
+  idMateria: number | null;
+  busca: string;
+}
+
+export const questoes = {
+  listar: (filtros: FiltrosQuestao, pagina: number) => {
+    const params = new URLSearchParams({ busca: filtros.busca, page: String(pagina), size: '20' });
+    if (filtros.status) params.set('status', filtros.status);
+    if (filtros.idMateria !== null) params.set('idMateria', String(filtros.idMateria));
+    return requisitar<Pagina<QuestaoResumo>>('GET', `/api/admin/questoes?${params}`);
+  },
+  buscar: (id: number) => requisitar<Questao>('GET', `/api/admin/questoes/${id}`),
+  criar: (dados: DadosQuestao) => requisitar<Questao>('POST', '/api/admin/questoes', dados),
+  atualizar: (id: number, dados: DadosQuestao) => requisitar<Questao>('PUT', `/api/admin/questoes/${id}`, dados),
+  excluir: (id: number) => requisitar<void>('DELETE', `/api/admin/questoes/${id}`),
+  publicar: (id: number) => requisitar<Questao>('PATCH', `/api/admin/questoes/${id}/publicar`),
+  arquivar: (id: number) => requisitar<Questao>('PATCH', `/api/admin/questoes/${id}/arquivar`),
+  anular: (id: number, desfazer = false) =>
+    requisitar<Questao>('PATCH', `/api/admin/questoes/${id}/anular?desfazer=${desfazer}`),
+  marcarDesatualizada: (id: number, desfazer = false) =>
+    requisitar<Questao>('PATCH', `/api/admin/questoes/${id}/marcar-desatualizada?desfazer=${desfazer}`),
+};
+
+/** HTML ja sanitizado pelo MarkdownService do backend (o mesmo das paginas publicas). */
+export const previaMarkdown = (markdown: string) =>
+  requisitar<{ html: string }>('POST', '/api/admin/previa-markdown', { markdown });

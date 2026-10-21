@@ -72,6 +72,26 @@ public interface QuestaoRepository extends JpaRepository<Questao, Integer> {
     @Query("""
             select q from Questao q
             where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.assunto.id = :idAssunto
+              and q.id > :id
+            order by q.id asc
+            limit 1
+            """)
+    Optional<Questao> proximaPublicadaPorAssunto(@Param("idAssunto") Integer idAssunto, @Param("id") Integer id);
+
+    @Query("""
+            select q from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.assunto.id = :idAssunto
+              and q.id < :id
+            order by q.id desc
+            limit 1
+            """)
+    Optional<Questao> anteriorPublicadaPorAssunto(@Param("idAssunto") Integer idAssunto, @Param("id") Integer id);
+
+    @Query("""
+            select q from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
               and q.assunto.id in :idsAssunto
               and q.id > :id
             order by q.id asc
@@ -90,6 +110,88 @@ public interface QuestaoRepository extends JpaRepository<Questao, Integer> {
             """)
     Optional<Questao> anteriorPublicadaPorAssuntos(@Param("idsAssunto") Collection<Integer> idsAssunto,
             @Param("id") Integer id);
+
+    /** RF07 RN2-RN3: listagem publica por cursor em ordem crescente de id. */
+    @EntityGraph(attributePaths = {"materia", "assunto", "prova", "prova.banca", "prova.orgao"})
+    @Query("""
+            select q from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.id > :depoisDe
+            order by q.id asc
+            """)
+    java.util.List<Questao> listarPublicadasDepoisDe(@Param("depoisDe") Integer depoisDe, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"materia", "assunto", "prova", "prova.banca", "prova.orgao"})
+    @Query("""
+            select q from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.materia.id = :idMateria
+              and q.id > :depoisDe
+            order by q.id asc
+            """)
+    java.util.List<Questao> listarPublicadasPorMateriaDepoisDe(@Param("idMateria") Integer idMateria,
+            @Param("depoisDe") Integer depoisDe, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"materia", "assunto", "prova", "prova.banca", "prova.orgao"})
+    @Query("""
+            select q from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.assunto.id = :idAssunto
+              and q.id > :depoisDe
+            order by q.id asc
+            """)
+    java.util.List<Questao> listarPublicadasPorAssuntoDepoisDe(@Param("idAssunto") Integer idAssunto,
+            @Param("depoisDe") Integer depoisDe, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"materia", "assunto", "prova", "prova.banca", "prova.orgao"})
+    @Query("""
+            select q from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.assunto.id in :idsAssunto
+              and q.id > :depoisDe
+            order by q.id asc
+            """)
+    java.util.List<Questao> listarPublicadasPorAssuntosDepoisDe(@Param("idsAssunto") Collection<Integer> idsAssunto,
+            @Param("depoisDe") Integer depoisDe, Pageable pageable);
+
+    /** RF07 / RF10: apenas os ids publicados do filtro em ordem crescente (GET /api/questoes/ids). */
+    @Query("""
+            select q.id from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.id > :depoisDe
+            order by q.id asc
+            """)
+    java.util.List<Integer> buscarIdsPublicadasDepoisDe(@Param("depoisDe") Integer depoisDe, Pageable pageable);
+
+    @Query("""
+            select q.id from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.materia.id = :idMateria
+              and q.id > :depoisDe
+            order by q.id asc
+            """)
+    java.util.List<Integer> buscarIdsPublicadasPorMateriaDepoisDe(@Param("idMateria") Integer idMateria,
+            @Param("depoisDe") Integer depoisDe, Pageable pageable);
+
+    @Query("""
+            select q.id from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.assunto.id = :idAssunto
+              and q.id > :depoisDe
+            order by q.id asc
+            """)
+    java.util.List<Integer> buscarIdsPublicadasPorAssuntoDepoisDe(@Param("idAssunto") Integer idAssunto,
+            @Param("depoisDe") Integer depoisDe, Pageable pageable);
+
+    @Query("""
+            select q.id from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.assunto.id in :idsAssunto
+              and q.id > :depoisDe
+            order by q.id asc
+            """)
+    java.util.List<Integer> buscarIdsPublicadasPorAssuntosDepoisDe(@Param("idsAssunto") Collection<Integer> idsAssunto,
+            @Param("depoisDe") Integer depoisDe, Pageable pageable);
 
     /** Lista do painel: filtros opcionais (null ou busca vazia = sem filtro); busca no enunciado. */
     @EntityGraph(attributePaths = "materia")

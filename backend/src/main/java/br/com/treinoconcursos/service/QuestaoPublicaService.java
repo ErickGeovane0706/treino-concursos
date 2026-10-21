@@ -11,22 +11,14 @@ import br.com.treinoconcursos.model.Prova;
 import br.com.treinoconcursos.model.Questao;
 import br.com.treinoconcursos.model.StatusQuestao;
 import br.com.treinoconcursos.model.TipoQuestao;
-import br.com.treinoconcursos.repository.AssuntoRepository;
-import br.com.treinoconcursos.repository.MateriaRepository;
 import br.com.treinoconcursos.repository.QuestaoRepository;
+import br.com.treinoconcursos.service.NavegacaoQuestoesService.Vizinhanca;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.regex.Pattern;
 
 /**
  * Monta os dados da pagina publica da questao (RF06, RF08, US01).
@@ -39,19 +31,14 @@ public class QuestaoPublicaService {
     static final int LIMITE_TITULO_PAGINA = LIMITE_TITULO_TOTAL - (" | " + SiteConfig.NOME).length();
     static final int LIMITE_META_DESCRICAO = 155;
 
-    private static final Pattern FILTRO_VALIDO =
-            Pattern.compile("^[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*)?$");
-
     private final QuestaoRepository questaoRepository;
-    private final MateriaRepository materiaRepository;
-    private final AssuntoRepository assuntoRepository;
+    private final NavegacaoQuestoesService navegacaoService;
     private final MarkdownService markdownService;
 
-    public QuestaoPublicaService(QuestaoRepository questaoRepository, MateriaRepository materiaRepository,
-            AssuntoRepository assuntoRepository, MarkdownService markdownService) {
+    public QuestaoPublicaService(QuestaoRepository questaoRepository, NavegacaoQuestoesService navegacaoService,
+            MarkdownService markdownService) {
         this.questaoRepository = questaoRepository;
-        this.materiaRepository = materiaRepository;
-        this.assuntoRepository = assuntoRepository;
+        this.navegacaoService = navegacaoService;
         this.markdownService = markdownService;
     }
 
@@ -70,7 +57,7 @@ public class QuestaoPublicaService {
         }
 
         String filtro = normalizarFiltro(de);
-        Vizinhanca vizinhanca = buscarVizinhanca(questao.getId(), filtro);
+        Vizinhanca vizinhanca = navegacaoService.buscarVizinhanca(questao.getId(), filtro);
 
         String enunciadoHtml = markdownService.paraHtml(questao.getEnunciado());
         String comentarioHtml = markdownService.paraHtml(questao.getComentario());
@@ -123,11 +110,7 @@ public class QuestaoPublicaService {
     }
 
     public static String normalizarFiltro(String de) {
-        if (de == null) {
-            return null;
-        }
-        String limpo = de.trim().replaceAll("^/+|/+$", "");
-        return FILTRO_VALIDO.matcher(limpo).matches() ? limpo : null;
+        return NavegacaoQuestoesService.normalizarFiltro(de);
     }
 
     public static String urlCanonica(Integer id, String slug, String filtro) {
@@ -135,58 +118,12 @@ public class QuestaoPublicaService {
         return filtro == null ? base : base + "?de=" + filtro;
     }
 
-    private Vizinhanca buscarVizinhanca(Integer idQuestao, String filtro) {
-        if (filtro != null) {
-            String[] partes = filtro.split("/", 2);
-            Materia materia = materiaRepository.findBySlug(partes[0]).orElse(null);
-            if (materia != null) {
-                if (partes.length == 2) {
-                    List<Integer> idsAssunto = idsDoAssuntoESubassuntos(materia.getId(), partes[1]);
-                    if (!idsAssunto.isEmpty()) {
-                        return new Vizinhanca(
-                                questaoRepository.anteriorPublicadaPorAssuntos(idsAssunto, idQuestao).orElse(null),
-                                questaoRepository.proximaPublicadaPorAssuntos(idsAssunto, idQuestao).orElse(null));
-                    }
-                }
-                return new Vizinhanca(
-                        questaoRepository.anteriorPublicadaPorMateria(materia.getId(), idQuestao).orElse(null),
-                        questaoRepository.proximaPublicadaPorMateria(materia.getId(), idQuestao).orElse(null));
-            }
-        }
-        return new Vizinhanca(
-                questaoRepository.anteriorPublicada(idQuestao).orElse(null),
-                questaoRepository.proximaPublicada(idQuestao).orElse(null));
-    }
-
-    private List<Integer> idsDoAssuntoESubassuntos(Integer idMateria, String slugAssunto) {
-        List<Assunto> todos = assuntoRepository.findByMateriaIdOrderByNome(idMateria);
-        Assunto raiz = todos.stream().filter(a -> a.getSlug().equals(slugAssunto)).findFirst().orElse(null);
-        if (raiz == null) {
-            return List.of();
-        }
-        Map<Integer, List<Integer>> filhosPorPai = new HashMap<>();
-        for (Assunto a : todos) {
-            if (a.getAssuntoPai() != null) {
-                filhosPorPai.computeIfAbsent(a.getAssuntoPai().getId(), k -> new ArrayList<>()).add(a.getId());
-            }
-        }
-        List<Integer> ids = new ArrayList<>();
-        Deque<Integer> fila = new ArrayDeque<>();
-        fila.add(raiz.getId());
-        while (!fila.isEmpty()) {
-            Integer atual = fila.removeFirst();
-            ids.add(atual);
-            fila.addAll(filhosPorPai.getOrDefault(atual, List.of()));
-        }
-        return ids;
-    }
-
     private static String urlDeQuestao(Questao questao, String filtro) {
         return questao == null ? null : urlCanonica(questao.getId(), questao.getSlug(), filtro);
     }
 
     /** RF04 RN3 e RF08 RN3: banca, orgao, ano e cargo, ou "Questao autoral". */
-    private static String fonteDe(Questao questao) {
+    static String fonteDe(Questao questao) {
         if (questao.getOrigem() == OrigemQuestao.PROVA && questao.getProva() != null) {
             Prova p = questao.getProva();
             return p.getBanca().getSigla() + " · " + p.getOrgao().getSigla() + " · " + p.getAno() + " · " + p.getCargo();
@@ -225,8 +162,5 @@ public class QuestaoPublicaService {
             recorte = recorte.substring(0, espaco).stripTrailing();
         }
         return recorte + "…";
-    }
-
-    private record Vizinhanca(Questao anterior, Questao proxima) {
     }
 }

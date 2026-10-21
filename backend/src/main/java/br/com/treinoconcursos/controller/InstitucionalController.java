@@ -1,15 +1,23 @@
 package br.com.treinoconcursos.controller;
 
+import br.com.treinoconcursos.service.NavegacaoQuestoesService;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-/** Paginas publicas fixas: inicio provisorio e institucionais (RF18). */
+/** Paginas publicas fixas: inicio (RF07, RF10) e institucionais (RF18). */
 @Controller
 public class InstitucionalController {
 
-    /** Provisoria: materias e "Continuar de onde parei" entram na issue #8. */
+    private final NavegacaoQuestoesService navegacaoService;
+
+    public InstitucionalController(NavegacaoQuestoesService navegacaoService) {
+        this.navegacaoService = navegacaoService;
+    }
+
     @GetMapping("/")
-    public String inicio() {
+    public String inicio(Model model) {
+        model.addAttribute("materias", navegacaoService.listarMateriasAtivas(null));
         return "inicio";
     }
 

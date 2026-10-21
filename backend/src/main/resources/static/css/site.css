@@ -540,6 +540,124 @@ h1 {
   font-weight: 600;
 }
 
+/* ---------- inicio e listagens (RF07, US02) ---------- */
+
+.grade-inicio {
+  display: grid;
+  gap: 20px;
+}
+
+.subtitulo-secao {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 12px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 15px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.chip:hover {
+  border-color: var(--brand);
+}
+
+.chip[aria-current='page'],
+.chip[data-ativo='true'] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
+}
+
+.lista-questoes {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item-questao {
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: var(--surface);
+}
+
+.classificacao-item {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.resumo-enunciado {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.45;
+}
+
+.link-questao {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-questao:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+.avisos-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tag-aviso {
+  font-size: 13px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
+}
+
+.tag-anulada {
+  background: var(--bad-bg);
+  color: var(--bad);
+}
+
+.paginacao-cursor {
+  margin-top: 24px;
+}
+
+.vazio-listagem {
+  margin-top: 16px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--bg);
+}
+
 /* ---------- paginas de erro (sem anuncio) ---------- */
 
 .erro {

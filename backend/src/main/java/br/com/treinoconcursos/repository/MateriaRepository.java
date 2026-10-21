@@ -20,4 +20,6 @@ public interface MateriaRepository extends JpaRepository<Materia, Integer> {
     boolean existsBySlug(String slug);
 
     boolean existsBySlugAndIdNot(String slug, Integer id);
+
+    java.util.List<Materia> findByAtivaTrueOrderByNomeAsc();
 }

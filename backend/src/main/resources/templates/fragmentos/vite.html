@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<!--/*
+  Scripts do Vite (doc/ambiente-de-desenvolvimento.md, 10.3), via #vite (SiteDialect).
+  O aviso de cookies (src/consentimento/main.ts) entra em todas as paginas.
+*/-->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <th:block th:fragment="cabecalho(ilhas)">
+    <!--/* So em dev: preambulo do React e cliente do Vite (hot reload) */-->
+    <th:block th:if="${#vite.dev()}">
+      <script type="module" th:each="js : ${#vite.scriptsDev()}" th:src="${js}"></script>
+    </th:block>
+    <th:block th:replace="~{fragmentos/vite :: estilosDaEntrada('src/consentimento/main.ts')}"></th:block>
+    <th:block th:each="entrada : ${ilhas}" th:insert="~{fragmentos/vite :: estilosDaEntrada(${entrada})}"></th:block>
+  </th:block>
+
+  <th:block th:fragment="estilosDaEntrada(entrada)" th:with="ativos=${#vite.ativos(entrada)}">
+    <th:block th:if="${ativos != null}">
+      <link rel="stylesheet" th:each="css : ${ativos.estilos()}" th:href="${css}">
+      <link rel="modulepreload" th:each="js : ${ativos.preload()}" th:href="${js}">
+    </th:block>
+  </th:block>
+</head>
+<body>
+  <th:block th:fragment="scripts(ilhas)">
+    <th:block th:replace="~{fragmentos/vite :: scriptDaEntrada('src/consentimento/main.ts')}"></th:block>
+    <th:block th:each="entrada : ${ilhas}" th:insert="~{fragmentos/vite :: scriptDaEntrada(${entrada})}"></th:block>
+  </th:block>
+
+  <th:block th:fragment="scriptDaEntrada(entrada)" th:with="ativos=${#vite.ativos(entrada)}">
+    <script type="module" th:if="${ativos != null}" th:src="${ativos.script()}"></script>
+  </th:block>
+</body>
+</html>

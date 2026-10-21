@@ -30,9 +30,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *
  * Perfil "test": sem os dados de exemplo do perfil dev. Cada teste comeca
  * com o banco vazio. O admin inicial fica desligado: os testes nao dependem
- * do backend/.env de quem esta rodando.
+ * do backend/.env de quem esta rodando, e o mesmo vale para o servidor do
+ * Vite e o contato (valores fixos, para os templates sairem iguais em toda maquina).
  */
-@SpringBootTest(properties = {"app.admin-inicial.email=", "app.admin-inicial.senha="})
+@SpringBootTest(properties = {"app.admin-inicial.email=", "app.admin-inicial.senha=",
+        "app.vite-dev-server=http://vite.teste", "app.contato.email=contato@teste.com.br",
+        "app.contato.responsavel=Equipe de Teste"})
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Import({TestcontainersConfiguration.class, IntegracaoTest.RelogioTeste.class})

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<!--/* Paginas de erro: noindex e nunca com anuncio (CLAUDE.md, RF12). */-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina('Página não encontrada', null, false, ${ {} }, ~{::.conteudo})}">
+<body>
+  <section class="conteudo card erro">
+    <p class="codigo">404</p>
+    <h1>Página não encontrada</h1>
+    <p>O endereço pode ter sido digitado errado ou a página não existe mais.</p>
+    <div class="acoes">
+      <a class="btn" href="/questoes">Ver questões</a>
+      <a class="btn ghost" href="/">Ir para o início</a>
+    </div>
+  </section>
+</body>
+</html>

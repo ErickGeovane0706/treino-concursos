@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!--/* Rascunho para revisao. TODO: pedir a leitura de um profissional de direito antes de pedir o AdSense. */-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina('Termos de Uso',
+        'Condições de uso do Treino de Concursos: acesso gratuito, conteúdo educacional e responsabilidades.',
+        true, ${ {} }, ~{::.conteudo})}">
+<body>
+  <article class="conteudo card texto">
+    <h1>Termos de Uso</h1>
+    <p class="atualizado">Última atualização: 19 de outubro de 2026.</p>
+
+    <p>
+      Ao usar o <strong>Treino de Concursos</strong>, você concorda com estes termos. Se não concordar, por favor
+      não use o site.
+    </p>
+
+    <h2>1. O serviço</h2>
+    <p>
+      O site oferece, de graça e sem cadastro, questões de concursos públicos com gabarito e comentários, para fins
+      de estudo. O acesso é mantido por anúncios. Podemos mudar, suspender ou encerrar qualquer parte do site a
+      qualquer momento.
+    </p>
+
+    <h2>2. Conteúdo e exatidão</h2>
+    <p>
+      Revisamos as questões e os comentários com cuidado, mas eles podem conter erros ou ficar desatualizados, por
+      exemplo, após uma mudança na lei. O conteúdo é material de apoio ao estudo e não substitui o edital, a lei
+      vigente nem o gabarito oficial da banca. Se encontrar um erro, avise pela página de
+      <a href="/contato">Contato</a>.
+    </p>
+
+    <h2>3. Propriedade intelectual</h2>
+    <p>
+      As questões de provas são reproduzidas com a indicação da banca, do órgão e do ano, para fins de estudo.
+      Os comentários, as questões autorais, a organização do acervo e o código do site são de nossa autoria. Você
+      pode usá-los para estudar e compartilhar links para as páginas, mas não pode copiar o acervo, no todo ou em
+      parte, para outro site, aplicativo ou material comercial sem autorização por escrito.
+    </p>
+
+    <h2>4. Uso permitido</h2>
+    <p>Ao usar o site, você se compromete a não:</p>
+    <ul>
+      <li>coletar o conteúdo de forma automatizada (robôs, raspagem), exceto os mecanismos de busca;</li>
+      <li>sobrecarregar o site ou tentar burlar seus limites e mecanismos de segurança;</li>
+      <li>clicar em anúncios de forma artificial ou incentivar outras pessoas a fazer isso;</li>
+      <li>enviar reportes de erro com conteúdo ofensivo, ilegal ou com dados pessoais de terceiros.</li>
+    </ul>
+
+    <h2>5. Anúncios e links externos</h2>
+    <p>
+      Os anúncios são exibidos pelo Google e não representam recomendação nossa. Não respondemos pelo conteúdo de
+      sites de terceiros acessados por anúncios ou links.
+    </p>
+
+    <h2>6. Responsabilidade</h2>
+    <p>
+      O site é oferecido "no estado em que se encontra". Na extensão permitida pela lei, não nos responsabilizamos
+      por resultados em provas, por decisões tomadas com base no conteúdo nem por indisponibilidades temporárias.
+      Nada nestes termos afasta direitos garantidos pelo Código de Defesa do Consumidor.
+    </p>
+
+    <h2>7. Privacidade</h2>
+    <p>
+      O tratamento de dados está descrito na <a href="/privacidade">Política de Privacidade</a> e na
+      <a href="/cookies">Política de Cookies</a>.
+    </p>
+
+    <h2>8. Mudanças e lei aplicável</h2>
+    <p>
+      Estes termos podem mudar; a data no início da página indica a última versão. Eles são regidos pelas leis do
+      Brasil. Dúvidas: <th:block th:replace="~{fragmentos/contato :: email}"></th:block>.
+      <!--/* TODO: definir o foro (cidade/UF) com quem revisar os termos. */-->
+    </p>
+  </article>
+</body>
+</html>

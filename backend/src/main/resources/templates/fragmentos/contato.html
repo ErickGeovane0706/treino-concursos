@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<!--/* Dados de contato do .env (CONTATO_EMAIL, CONTATO_RESPONSAVEL); vazios, mostram a pendencia. */-->
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <th:block th:fragment="email">
+    <a th:if="${!#strings.isEmpty(#site.contatoEmail)}" th:href="${'mailto:' + #site.contatoEmail}" th:text="${#site.contatoEmail}">contato@exemplo.com.br</a>
+    <strong th:if="${#strings.isEmpty(#site.contatoEmail)}">[TODO: configurar CONTATO_EMAIL]</strong>
+  </th:block>
+
+  <th:block th:fragment="responsavel">
+    <th:block th:if="${!#strings.isEmpty(#site.responsavel)}" th:text="${#site.responsavel}">Nome</th:block>
+    <strong th:if="${#strings.isEmpty(#site.responsavel)}">[TODO: configurar CONTATO_RESPONSAVEL]</strong>
+  </th:block>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "_montar-AbC123.js": {
+    "file": "assets/montar-AbC123.js",
+    "name": "montar",
+    "imports": ["_jsx-runtime-Xyz789.js"],
+    "css": ["assets/montar-Css111.css"]
+  },
+  "_jsx-runtime-Xyz789.js": {
+    "file": "assets/jsx-runtime-Xyz789.js",
+    "name": "jsx-runtime",
+    "imports": ["_montar-AbC123.js"]
+  },
+  "src/ilhas/treino.tsx": {
+    "file": "assets/ilha-treino-Def456.js",
+    "name": "ilha-treino",
+    "src": "src/ilhas/treino.tsx",
+    "isEntry": true,
+    "imports": ["_montar-AbC123.js", "_jsx-runtime-Xyz789.js"],
+    "css": ["assets/ilha-treino-Css222.css"]
+  },
+  "src/consentimento/main.ts": {
+    "file": "assets/consentimento-Ghi789.js",
+    "name": "consentimento",
+    "src": "src/consentimento/main.ts",
+    "isEntry": true
+  }
+}

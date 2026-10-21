@@ -2,7 +2,12 @@ import { act } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CHAVE_PROGRESSO, lerProgresso } from '../progresso/progresso';
+import {
+  CHAVE_PROGRESSO,
+  definirOcultarResolvidas,
+  lerProgresso,
+  registrarResposta,
+} from '../progresso/progresso';
 import { IlhaTreino, iniciarIlhaTreino, lerDadosTreino, type DadosTreino } from './treino';
 
 function criarDadosPadrao(parcial: Partial<DadosTreino> = {}): DadosTreino {
@@ -27,6 +32,7 @@ describe('Ilha de treino da questão', () => {
   beforeEach(() => {
     localStorage.clear();
     document.body.innerHTML = '';
+    vi.restoreAllMocks();
   });
 
   it('lê os dados do HTML renderizado pelo servidor e substitui o <details> ao montar a ilha', async () => {
@@ -160,7 +166,23 @@ describe('Ilha de treino da questão', () => {
     expect(link).toHaveAttribute('href', '/materia/direito-constitucional');
   });
 
-  it('continua funcionando mesmo com localStorage bloqueado (RNF06)', async () => {
+  it('pula questões já resolvidas no botão "Próxima questão" quando "Ocultar questões já resolvidas" está ativa (RF10 RN4)', async () => {
+    const user = userEvent.setup();
+    registrarResposta(43, 'A', true, 'direito-constitucional');
+    definirOcultarResolvidas(true);
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ itens: [43, 45], proximoCursor: null }), { status: 200 }),
+    );
+
+    render(<IlhaTreino dados={criarDadosPadrao()} />);
+    await user.click(screen.getAllByRole('button')[1]);
+
+    const linkProxima = await screen.findByRole('link', { name: 'Próxima questão' });
+    expect(linkProxima).toHaveAttribute('href', '/questao/45?de=direito-constitucional');
+  });
+
+  it('continua funcionando mesmo com localStorage bloqueado e exibe aviso discreto (RF10 RN5, RNF06)', async () => {
     const user = userEvent.setup();
     const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new DOMException('Blocked', 'SecurityError');
@@ -171,6 +193,9 @@ describe('Ilha de treino da questão', () => {
 
     try {
       render(<IlhaTreino dados={criarDadosPadrao()} />);
+      expect(document.querySelector('[data-aviso-armazenamento]')).toHaveTextContent(
+        'Armazenamento do navegador indisponível',
+      );
       await user.click(screen.getAllByRole('button')[1]);
       expect(screen.getByRole('status')).toHaveTextContent('Você acertou');
       expect(localStorage.length).toBe(0);
@@ -181,3 +206,4 @@ describe('Ilha de treino da questão', () => {
     }
   });
 });
+

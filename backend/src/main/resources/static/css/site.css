@@ -658,6 +658,151 @@ h1 {
   background: var(--bg);
 }
 
+/* ---------- progresso local nas listagens e em /meu-progresso (RF10) ---------- */
+
+.controles-progresso {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.controles-progresso-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.chave-ocultar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.chave-ocultar input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+.link-meu-progresso {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.item-questao.item-acertou {
+  border-left: 5px solid var(--ok);
+}
+
+.item-questao.item-errou {
+  border-left: 5px solid var(--bad);
+}
+
+.tag-resolvida {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.tag-resolvida.ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.tag-resolvida.bad {
+  background: var(--bad-bg);
+  color: var(--bad);
+}
+
+.aviso-fim-filtro,
+.aviso-todas-ocultas {
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 15px;
+}
+
+.aviso-fim-filtro p {
+  margin: 0;
+}
+
+.aviso-fim-filtro .acoes {
+  margin-top: 12px;
+}
+
+.aviso-armazenamento {
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.painel-meu-progresso {
+  margin-top: 20px;
+}
+
+.resumo-progresso-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.resumo-item {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.resumo-rotulo {
+  display: block;
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.resumo-valor {
+  display: block;
+  font-size: 28px;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.resumo-valor.ok {
+  color: var(--ok);
+}
+
+.resumo-valor.bad {
+  color: var(--bad);
+}
+
+.preferencias-progresso {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
 /* ---------- paginas de erro (sem anuncio) ---------- */
 
 .erro {

@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { registrarResposta } from '../progresso/progresso';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  armazenamentoDisponivel,
+  buscarProximaNaoResolvida,
+  lerOcultarResolvidas,
+  registrarResposta,
+  registrarUltimaVista,
+} from '../progresso/progresso';
 import { montarIlha } from './montar';
 
 export interface AlternativaTreino {
@@ -48,9 +54,56 @@ export function lerDadosTreino(elemento: HTMLElement): DadosTreino | null {
   };
 }
 
+function extrairIdDaUrlQuestao(url: string | null): number | null {
+  if (!url) return null;
+  const match = /^\/questao\/(\d+)(?:\/|\?|$)/.exec(url);
+  return match ? Number(match[1]) : null;
+}
+
 export function IlhaTreino({ dados }: { dados: DadosTreino }) {
   const [escolha, setEscolha] = useState<string | null>(null);
+  const [proximaUrl, setProximaUrl] = useState<string | null>(dados.proximaUrl);
   const proximaRef = useRef<HTMLAnchorElement>(null);
+  const semArmazenamento = useMemo(() => !armazenamentoDisponivel(), []);
+
+  useEffect(() => {
+    setProximaUrl(dados.proximaUrl);
+    registrarUltimaVista(dados.id, dados.filtro);
+  }, [dados.id, dados.filtro, dados.proximaUrl]);
+
+  // RF10 RN4: quando "Ocultar questoes ja resolvidas" estiver ativa, o botao
+  // "Proxima questao" e o link de navegacao pulam as questoes ja resolvidas.
+  useEffect(() => {
+    if (!lerOcultarResolvidas()) return;
+    let cancelado = false;
+
+    buscarProximaNaoResolvida(dados.filtro, { depoisDe: dados.id })
+      .then((resultado) => {
+        if (cancelado) return;
+        const linkNavProxima = document.querySelector<HTMLAnchorElement>('.navegacao-questao a[rel="next"]');
+        if (resultado.status === 'encontrada') {
+          const idOriginal = extrairIdDaUrlQuestao(dados.proximaUrl);
+          const novaUrl = idOriginal === resultado.idQuestao && dados.proximaUrl ? dados.proximaUrl : resultado.url;
+          setProximaUrl(novaUrl);
+          if (linkNavProxima) {
+            linkNavProxima.href = novaUrl;
+            linkNavProxima.hidden = false;
+          }
+        } else {
+          setProximaUrl(null);
+          if (linkNavProxima) {
+            linkNavProxima.hidden = true;
+          }
+        }
+      })
+      .catch(() => {
+        // Em caso de falha de rede, mantem o link renderizado pelo servidor
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [dados.id, dados.filtro, dados.proximaUrl]);
 
   const responder = useCallback(
     (letra: string) => {
@@ -124,6 +177,12 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
         ))}
       </ul>
 
+      {semArmazenamento && (
+        <p className="aviso-armazenamento" data-aviso-armazenamento>
+          Armazenamento do navegador indisponível: seu progresso não será salvo nesta sessão.
+        </p>
+      )}
+
       {respondida && (
         <>
           <div className={`fb ${acertou ? 'ok' : 'bad'}`} role="status">
@@ -138,10 +197,10 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
             <a
               ref={proximaRef}
               className="btn btn-bloco"
-              href={dados.proximaUrl ?? dados.listagemUrl}
+              href={proximaUrl ?? dados.listagemUrl}
               data-proxima
             >
-              {dados.proximaUrl ? 'Próxima questão' : 'Ver mais questões'}
+              {proximaUrl ? 'Próxima questão' : 'Ver mais questões'}
             </a>
             <button
               type="button"

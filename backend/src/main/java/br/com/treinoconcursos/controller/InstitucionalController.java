@@ -47,4 +47,11 @@ public class InstitucionalController {
     public String cookies() {
         return "institucional/cookies";
     }
+
+    /** RF10 RN6: pagina publica (noindex) para consultar e apagar o progresso salvo no navegador. */
+    @GetMapping("/meu-progresso")
+    public String meuProgresso() {
+        return "meu-progresso";
+    }
 }
+

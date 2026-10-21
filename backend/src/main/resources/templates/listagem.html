@@ -75,6 +75,8 @@
     </div>
 
     <th:block th:if="${!#lists.isEmpty(listagem.questoes)}">
+      <div data-controles-listagem></div>
+
       <ol class="lista-questoes" data-lista-questoes>
         <li class="item-questao"
             th:each="q : ${listagem.questoes}"

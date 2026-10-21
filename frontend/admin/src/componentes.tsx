@@ -66,7 +66,10 @@ interface Coluna<T> {
   valor: (item: T) => ReactNode;
 }
 
-/** Lista paginada com busca, usada por materias, bancas, orgaos e provas. */
+/**
+ * Lista paginada com busca, usada por materias, bancas, orgaos, provas e questoes.
+ * Filtros extras ficam com quem chama: quando `carregar` muda, volta a pagina 1.
+ */
 export function ListaPaginada<T extends { id: number }>({
   titulo,
   carregar,
@@ -74,6 +77,7 @@ export function ListaPaginada<T extends { id: number }>({
   linkNovo,
   textoNovo,
   linkItem,
+  filtros,
 }: {
   titulo: string;
   carregar: (busca: string, pagina: number) => Promise<Pagina<T>>;
@@ -81,11 +85,14 @@ export function ListaPaginada<T extends { id: number }>({
   linkNovo: string;
   textoNovo: string;
   linkItem: (item: T) => string;
+  filtros?: ReactNode;
 }) {
   const [busca, setBusca] = useState('');
   const [pagina, setPagina] = useState(0);
   const [dados, setDados] = useState<Pagina<T> | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => setPagina(0), [carregar]);
 
   useEffect(() => {
     let ativo = true;
@@ -108,17 +115,20 @@ export function ListaPaginada<T extends { id: number }>({
           {textoNovo}
         </Link>
       </div>
-      <input
-        type="search"
-        placeholder="Buscar..."
-        aria-label="Buscar"
-        value={busca}
-        onChange={(e) => {
-          setBusca(e.target.value);
-          setPagina(0);
-        }}
-        className="w-full max-w-sm rounded border border-slate-300 px-3 py-2"
-      />
+      <div className="flex flex-wrap items-end gap-3">
+        <input
+          type="search"
+          placeholder="Buscar..."
+          aria-label="Buscar"
+          value={busca}
+          onChange={(e) => {
+            setBusca(e.target.value);
+            setPagina(0);
+          }}
+          className="w-full max-w-sm rounded border border-slate-300 px-3 py-2"
+        />
+        {filtros}
+      </div>
       <Mensagem erro={erro} />
       {dados && dados.content.length === 0 && <p className="text-slate-600">Nada encontrado.</p>}
       {dados && dados.content.length > 0 && (

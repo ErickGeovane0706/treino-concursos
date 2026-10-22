@@ -1,6 +1,7 @@
 package br.com.treinoconcursos.controller;
 
 import br.com.treinoconcursos.dto.QuestaoPaginaView;
+import br.com.treinoconcursos.service.DadosEstruturadosService;
 import br.com.treinoconcursos.service.QuestaoPublicaService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
@@ -18,9 +19,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class QuestaoPublicaController {
 
     private final QuestaoPublicaService service;
+    private final DadosEstruturadosService dadosEstruturados;
 
-    public QuestaoPublicaController(QuestaoPublicaService service) {
+    public QuestaoPublicaController(QuestaoPublicaService service, DadosEstruturadosService dadosEstruturados) {
         this.service = service;
+        this.dadosEstruturados = dadosEstruturados;
     }
 
     /**
@@ -38,6 +41,7 @@ public class QuestaoPublicaController {
             return null;
         }
         model.addAttribute("questao", questao);
+        model.addAttribute("dadosEstruturados", dadosEstruturados.trilhaDaQuestao(questao));
         return "questao";
     }
 }

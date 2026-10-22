@@ -318,7 +318,7 @@ A coluna **Fase** indica em qual etapa do [plano de implementação](plano-de-im
   - **RN1:** O sistema gera automaticamente `/sitemap.xml` como índice de sitemaps, com no máximo 50.000 endereços por arquivo e a data da última alteração de cada página.
   - **RN2:** O `/robots.txt` bloqueia apenas `/admin` e `/api` e informa o endereço do sitemap. As demais páginas que não devem aparecer na busca usam `noindex` (RN3), e não o bloqueio no robots.txt, pois o robô precisa acessar a página para ler o `noindex`.
   - **RN3:** Toda página pública possui link canônico. Páginas de simulado, de comentários do simulado e de combinações com três ou mais filtros recebem `noindex`.
-  - **RN4:** As páginas de questão incluem dados estruturados (schema.org) quando aplicável, conforme as diretrizes de busca vigentes.
+  - **RN4:** As páginas de questão incluem dados estruturados (schema.org) quando aplicável, conforme as diretrizes de busca vigentes. Hoje (10/2026): `BreadcrumbList` na questão e nas listagens e `WebSite` no início. `Quiz` não se aplica: o resultado "Education Q&A" exige `eduQuestionType = Flashcard` e o "Practice problem" saiu da busca; marcar questão de múltipla escolha como flashcard descreveria a página de forma diferente do que ela é.
 
 #### RF10. Progresso Local do Visitante
 

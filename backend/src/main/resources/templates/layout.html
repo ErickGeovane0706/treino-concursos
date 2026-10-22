@@ -8,6 +8,9 @@
   - indexavel: false escreve <meta name="robots" content="noindex">
   - ilhas: entradas do Vite desta pagina (ex.: {'src/ilhas/treino.tsx'})
   - conteudo: o elemento com a classe "conteudo", inserido no <main>
+  Variaveis do modelo (RF09):
+  - urlCanonica: link canonico e og:url (PaginaPublicaAdvice); ausente nas paginas de erro
+  - dadosEstruturados: mapa schema.org escrito como JSON-LD (DadosEstruturadosService)
   Nenhum anuncio aqui: cada pagina decide (RF12), e as de erro nao tem.
 */-->
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
@@ -18,11 +21,22 @@
   <title th:text="${titulo == null ? #site.nome : titulo + ' | ' + #site.nome}">Treino de Concursos</title>
   <meta name="description" th:if="${descricao != null}" th:content="${descricao}">
   <meta name="robots" content="noindex" th:unless="${indexavel}">
+  <link rel="canonical" th:if="${urlCanonica != null}" th:href="${urlCanonica}">
+  <!--/* Open Graph basico: titulo, descricao e endereco ao compartilhar o link */-->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" th:content="${#site.nome}">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:title" th:content="${titulo == null ? #site.nome : titulo}">
+  <meta property="og:description" th:if="${descricao != null}" th:content="${descricao}">
+  <meta property="og:url" th:if="${urlCanonica != null}" th:content="${urlCanonica}">
+  <meta name="twitter:card" content="summary">
+  <script type="application/ld+json" th:if="${dadosEstruturados != null}" th:inline="javascript">[[${dadosEstruturados}]]</script>
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#EEF2F7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0F1626" media="(prefers-color-scheme: dark)">
-  <link rel="preload" href="/fontes/public-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/css/site.css">
+  <!--/* @{...}: o ResourceUrlEncodingFilter poe o hash do conteudo na URL (cache imutavel, WebConfig) */-->
+  <link rel="preload" th:href="@{/fontes/public-sans-latin.woff2}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" th:href="@{/css/site.css}">
   <th:block th:replace="~{fragmentos/vite :: cabecalho(${ilhas})}"></th:block>
 </head>
 <body>

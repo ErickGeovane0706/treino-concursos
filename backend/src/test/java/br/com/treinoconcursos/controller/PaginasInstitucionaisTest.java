@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -28,7 +29,7 @@ class PaginasInstitucionaisTest extends IntegracaoTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
                 .andExpect(content().string(allOf(
                         containsString("<html lang=\"pt-BR\">"),
-                        containsString("href=\"/css/site.css\""),
+                        matchesPattern("(?s).*href=\"/css/site-[0-9a-f]{32}\\.css\".*"),
                         containsString("href=\"/sobre\""),
                         containsString("href=\"/contato\""),
                         containsString("href=\"/privacidade\""),

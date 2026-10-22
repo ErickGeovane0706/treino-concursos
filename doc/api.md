@@ -43,7 +43,7 @@ Os **endpoints JSON** de cada entidade são documentados no **Swagger**, gerado 
 | `/simulado/{slug}/resultado` | Resultado e gabarito | **noindex** | RF13 RN3 |
 | `/simulado/{slug}/comentarios` | Comentários (Offerwall do AdSense) | **noindex** | RF15 |
 | `/sobre`, `/contato`, `/privacidade`, `/termos`, `/cookies` | Institucionais | sim | RF18 |
-| `/sitemap.xml`, `/sitemaps/questoes-{n}.xml` | Sitemaps | — | RF09 |
+| `/sitemap.xml`, `/sitemaps/paginas.xml`, `/sitemaps/questoes-{n}.xml` | Sitemaps: índice, páginas fixas e listagens com questões, e questões com id em ((n-1)·50.000, n·50.000] | — | RF09 |
 | `/robots.txt`, `/ads.txt` | Arquivos de raiz | — | RF09, RF12 |
 | `/admin/**` | SPA do painel (React) | bloqueado no robots | RF01 |
 
@@ -51,6 +51,9 @@ Regras das páginas:
 
 - URLs em minúsculas, com hífen, **sem barra no final**. Slugs vindos do banco (`materias.slug`, `assuntos.slug` etc.).
 - Quando a URL pedida não é a canônica (slug antigo, maiúsculas, barra no final), a resposta é `301` para a canônica (RF08 RN1).
+- Toda página pública tem `<link rel="canonical">` com `SITE_URL` + caminho, sem query string (exceto o cursor `?depoisDe=` das listagens), e Open Graph básico. Listagem sem questões recebe **noindex**.
+- Dados estruturados (RF09 RN4): `BreadcrumbList` na questão e nas listagens, `WebSite` no início. Não usamos `Quiz`: o "Education Q&A" do Google só aceita flashcards e o "Practice problem" foi retirado.
+- `Cache-Control`: páginas públicas `max-age=300, s-maxage=3600, public` (navegador 5 min, CDN 1 h); `/assets/**`, `/css/**` e `/fontes/**` com hash na URL e `max-age=31536000, immutable`; sitemaps e robots `max-age=3600, public`; API, painel, erros e redirecionamentos `no-store`.
 - Questão inexistente: `404`. Questão arquivada: `410 Gone` (RF05 RN3). As duas sem anúncio.
 - Parâmetros de navegação vão na query string e **não** fazem parte da URL canônica. Exemplo: `/questao/1234/slug?de=portugues/crase` indica de qual listagem o visitante veio, para o botão "Próxima questão" seguir o mesmo filtro.
 

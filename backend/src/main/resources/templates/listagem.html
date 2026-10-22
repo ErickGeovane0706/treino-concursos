@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <!--/*
   Listagens de questoes com ordem fixa por id crescente e paginacao por cursor
-  (?depoisDe=) (RF07 RN1-RN5, US02).
+  (?depoisDe=) (RF07 RN1-RN5, US02). Lista vazia recebe noindex (RF09 RN3) e fica fora do sitemap.
 */-->
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout :: pagina(${listagem.tituloPagina}, ${listagem.metaDescricao}, true, ${ {'src/ilhas/listagem.tsx'} }, ~{::.conteudo})}">
+      th:replace="~{layout :: pagina(${listagem.tituloPagina}, ${listagem.metaDescricao}, ${!#lists.isEmpty(listagem.questoes)}, ${ {'src/ilhas/listagem.tsx'} }, ~{::.conteudo})}">
 <body>
   <section class="conteudo card listagem"
            data-ilha="listagem"

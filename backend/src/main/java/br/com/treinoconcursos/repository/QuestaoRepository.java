@@ -1,5 +1,7 @@
 package br.com.treinoconcursos.repository;
 
+import br.com.treinoconcursos.dto.QuestaoSitemap;
+import br.com.treinoconcursos.dto.UltimaAtualizacao;
 import br.com.treinoconcursos.model.Questao;
 import br.com.treinoconcursos.model.StatusQuestao;
 import org.springframework.data.domain.Page;
@@ -203,6 +205,48 @@ public interface QuestaoRepository extends JpaRepository<Questao, Integer> {
             """)
     Page<Questao> buscar(@Param("status") StatusQuestao status, @Param("idMateria") Integer idMateria,
             @Param("busca") String busca, Pageable pageable);
+
+    /**
+     * RF09 RN1: blocos de ids do sitemap ({@code (id - 1) / tamanho + 1}) que tem questao
+     * publicada e a ultima alteracao de cada um. Linhas: [bloco, max(atualizado_em)].
+     */
+    @Query(value = """
+            SELECT (id_questao - 1) / :tamanho + 1 AS bloco, max(atualizado_em) AS ultima
+            FROM questoes
+            WHERE status = 'PUBLICADA'
+            GROUP BY 1
+            ORDER BY 1
+            """, nativeQuery = true)
+    java.util.List<Object[]> blocosDoSitemap(@Param("tamanho") int tamanho);
+
+    /** RF09 RN1: questoes publicadas de um bloco do sitemap, pela chave primaria. */
+    @Query("""
+            select new br.com.treinoconcursos.dto.QuestaoSitemap(q.id, q.slug, q.atualizadoEm)
+            from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.id > :depoisDe and q.id <= :ate
+            order by q.id asc
+            """)
+    java.util.List<QuestaoSitemap> publicadasParaSitemap(@Param("depoisDe") int depoisDe, @Param("ate") int ate);
+
+    /** RF09 RN1: ultima alteracao das listagens de materia (so as que tem questao publicada). */
+    @Query("""
+            select new br.com.treinoconcursos.dto.UltimaAtualizacao(q.materia.id, max(q.atualizadoEm))
+            from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+            group by q.materia.id
+            """)
+    java.util.List<UltimaAtualizacao> ultimaAtualizacaoPorMateria();
+
+    /** RF09 RN1: o mesmo por assunto direto (os subassuntos sao somados no servico). */
+    @Query("""
+            select new br.com.treinoconcursos.dto.UltimaAtualizacao(q.assunto.id, max(q.atualizadoEm))
+            from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.assunto is not null
+            group by q.assunto.id
+            """)
+    java.util.List<UltimaAtualizacao> ultimaAtualizacaoPorAssunto();
 
     /** RF04 RN5: gabarito mudou, as estatisticas (RF17) deixam de valer. */
     @Modifying(flushAutomatically = true)

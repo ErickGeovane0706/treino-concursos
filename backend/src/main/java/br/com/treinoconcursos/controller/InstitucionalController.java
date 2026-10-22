@@ -1,5 +1,6 @@
 package br.com.treinoconcursos.controller;
 
+import br.com.treinoconcursos.service.DadosEstruturadosService;
 import br.com.treinoconcursos.service.NavegacaoQuestoesService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -10,14 +11,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class InstitucionalController {
 
     private final NavegacaoQuestoesService navegacaoService;
+    private final DadosEstruturadosService dadosEstruturados;
 
-    public InstitucionalController(NavegacaoQuestoesService navegacaoService) {
+    public InstitucionalController(NavegacaoQuestoesService navegacaoService,
+            DadosEstruturadosService dadosEstruturados) {
         this.navegacaoService = navegacaoService;
+        this.dadosEstruturados = dadosEstruturados;
     }
 
     @GetMapping("/")
     public String inicio(Model model) {
         model.addAttribute("materias", navegacaoService.listarMateriasAtivas(null));
+        model.addAttribute("dadosEstruturados", dadosEstruturados.site());
         return "inicio";
     }
 

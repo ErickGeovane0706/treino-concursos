@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<!--/*
+  Pagina "Meu progresso" (RF10 RN1, RN5, RN6; doc/api.md secao 2).
+  Marcada com noindex (indexavel = false) porque o conteudo depende do
+  localStorage de cada visitante.
+*/-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina('Meu progresso',
+        'Consulte seu progresso de estudo salvo neste navegador ou apague os dados locais.',
+        false, ${ {'src/ilhas/listagem.tsx'} }, ~{::.conteudo})}">
+<body>
+  <article class="conteudo card texto">
+    <h1>Meu progresso</h1>
+    <p>
+      Seu progresso (questões resolvidas, acertos, erros e a última questão vista em cada filtro) fica guardado
+      <strong>apenas neste navegador</strong> (<code>localStorage</code>). Nenhum dado pessoal ou histórico individual é
+      enviado ao servidor.
+    </p>
+    <p>
+      Se você trocar de aparelho, usar outro navegador ou limpar os dados do site, o progresso não estará disponível lá.
+      Você pode apagar tudo a qualquer momento usando o botão abaixo.
+    </p>
+
+    <div data-ilha="meu-progresso">
+      <noscript>
+        <p class="aviso-armazenamento">
+          Ative o JavaScript para visualizar e gerenciar o progresso salvo neste navegador.
+        </p>
+      </noscript>
+    </div>
+  </article>
+</body>
+</html>

@@ -101,4 +101,21 @@ class PaginasInstitucionaisTest extends IntegracaoTest {
         mockMvc.perform(get("/privacidade"))
                 .andExpect(content().string(not(containsString("TODO"))));
     }
+
+    /** RF10 RN6 e doc/api.md secao 2: /meu-progresso tem noindex, explica que fica so no navegador e monta a ilha. */
+    @Test
+    void meuProgressoUsaNoindexInformaArmazenamentoLocalECarregaIlha() throws Exception {
+        mockMvc.perform(get("/meu-progresso"))
+                .andExpect(status().isOk())
+                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE))
+                .andExpect(content().string(allOf(
+                        containsString("<title>Meu progresso | Treino de Concursos</title>"),
+                        containsString("<meta name=\"robots\" content=\"noindex\">"),
+                        containsString("apenas neste navegador"),
+                        containsString("localStorage"),
+                        containsString("data-ilha=\"meu-progresso\""),
+                        containsString("src=\"http://vite.teste/src/ilhas/listagem.tsx\""),
+                        not(containsString("<form")))));
+    }
 }
+

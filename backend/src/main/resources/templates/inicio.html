@@ -1,20 +1,39 @@
 <!DOCTYPE html>
-<!--/* Pagina inicial provisoria: as materias e o "Continuar de onde parei" entram na issue #8 (RF07, RF10). */-->
+<!--/*
+  Pagina inicial publica (RF07, RF10).
+  Mostra as materias ativas como links indexaveis (/questoes/{materia}) e
+  carrega a ilha listagem.tsx para o "Continuar de onde parei".
+*/-->
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout :: pagina(null,
         'Banco de questões de concursos públicos grátis, sem limite diário e sem cadastro. Responda, veja o comentário e siga para a próxima.',
-        true, ${ {} }, ~{::.conteudo})}">
+        true, ${ {'src/ilhas/listagem.tsx'} }, ~{::.conteudo})}">
 <body>
-  <section class="conteudo card texto">
-    <h1>Questões de concursos grátis, sem cadastro</h1>
-    <p>
-      Resolva questões de provas de concursos públicos, veja na hora se acertou e leia o comentário de cada uma.
-      Não há limite diário nem cadastro: seu progresso fica guardado no seu próprio navegador.
-    </p>
-    <div class="acoes">
-      <a class="btn" href="/questoes">Começar a treinar</a>
-      <a class="btn ghost" href="/sobre">Como funciona</a>
-    </div>
-  </section>
+  <div class="conteudo grade-inicio" data-ilha="listagem" data-filtro="todas">
+    <section class="card texto">
+      <h1>Questões de concursos grátis, sem cadastro</h1>
+      <p>
+        Resolva questões de provas de concursos públicos, veja na hora se acertou e leia o comentário de cada uma.
+        Não há limite diário nem cadastro: seu progresso fica guardado no seu próprio navegador.
+      </p>
+      <div class="acoes">
+        <a class="btn" href="/questoes">Começar a treinar</a>
+        <a class="btn ghost" href="/sobre">Como funciona</a>
+      </div>
+      <div data-controles-listagem></div>
+    </section>
+
+    <section class="card" th:if="${!#lists.isEmpty(materias)}" aria-labelledby="titulo-materias">
+      <h2 id="titulo-materias" class="subtitulo-secao">Treinar por matéria</h2>
+      <ul class="filters" aria-label="Matérias">
+        <li>
+          <a class="chip" href="/questoes">Todas</a>
+        </li>
+        <li th:each="mat : ${materias}">
+          <a class="chip" th:href="${mat.url}" th:text="${mat.nome}">Português</a>
+        </li>
+      </ul>
+    </section>
+  </div>
 </body>
 </html>

@@ -1,4 +1,4 @@
-import { act } from 'react';
+import { act, StrictMode } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,7 +8,13 @@ import {
   lerProgresso,
   registrarResposta,
 } from '../progresso/progresso';
-import { IlhaTreino, iniciarIlhaTreino, lerDadosTreino, type DadosTreino } from './treino';
+import {
+  IlhaTreino,
+  iniciarIlhaTreino,
+  lerDadosTreino,
+  MAX_PAGINAS_PROXIMA,
+  type DadosTreino,
+} from './treino';
 
 function criarDadosPadrao(parcial: Partial<DadosTreino> = {}): DadosTreino {
   return {
@@ -180,6 +186,63 @@ describe('Ilha de treino da questão', () => {
 
     const linkProxima = await screen.findByRole('link', { name: 'Próxima questão' });
     expect(linkProxima).toHaveAttribute('href', '/questao/45?de=direito-constitucional');
+  });
+
+  it('mantém o link do servidor quando não acha não resolvida dentro do limite de páginas (RNF03)', async () => {
+    registrarResposta(43, 'A', true, 'direito-constitucional');
+    definirOcultarResolvidas(true);
+
+    let chamadas = 0;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      chamadas++;
+      const base = 43 + (chamadas - 1) * 2;
+      return new Response(JSON.stringify({ itens: [base], proximoCursor: base }), { status: 200 });
+    });
+    registrarResposta(45, 'A', true, 'direito-constitucional');
+
+    render(<IlhaTreino dados={criarDadosPadrao()} />);
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    expect(chamadas).toBe(MAX_PAGINAS_PROXIMA);
+    expect(screen.getByRole('link', { name: 'Próxima questão' })).toHaveAttribute(
+      'href',
+      '/questao/43/proxima-questao?de=direito-constitucional',
+    );
+  });
+
+  it('antes de responder mantém o <details>, o espaço do anúncio e o link renderizados pelo servidor (CLS)', () => {
+    render(<IlhaTreino dados={criarDadosPadrao()} />);
+
+    const gabarito = document.querySelector('details[data-gabarito]');
+    expect(gabarito).not.toBeNull();
+    expect(gabarito).toHaveTextContent('Gabarito: B');
+    expect(gabarito).toHaveTextContent('Comentário explicando por que a B está certa.');
+    expect(document.querySelector('[data-espaco-anuncio]')).not.toBeNull();
+    expect(screen.getByRole('link', { name: 'Próxima questão' })).toHaveAttribute(
+      'href',
+      '/questao/43/proxima-questao?de=direito-constitucional',
+    );
+    expect(screen.queryByRole('button', { name: 'Refazer' })).toBeNull();
+  });
+
+  it('registra a resposta uma única vez mesmo no StrictMode e com cliques repetidos', async () => {
+    const user = userEvent.setup();
+    render(
+      <StrictMode>
+        <IlhaTreino dados={criarDadosPadrao()} />
+      </StrictMode>,
+    );
+
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
+    const botoes = screen.getAllByRole('button');
+    await user.click(botoes[0]);
+    await user.keyboard('b');
+
+    const gravacoesProgresso = setItemSpy.mock.calls.filter(([chave]) => chave === CHAVE_PROGRESSO);
+    expect(gravacoesProgresso).toHaveLength(1);
+    expect(lerProgresso().respostas['42']).toMatchObject({ alternativa: 'A', acertou: false });
   });
 
   it('continua funcionando mesmo com localStorage bloqueado e exibe aviso discreto (RF10 RN5, RNF06)', async () => {

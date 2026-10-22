@@ -336,4 +336,38 @@ describe('Módulo de progresso local (RF10 RN1-RN7, US03, RNF06)', () => {
     const r1 = await buscarProximaNaoResolvida('portugues', { fetchFn: fetchFalha });
     expect(r1).toEqual({ status: 'vazio', filtro: 'portugues' });
   });
+
+  it('para em maxPaginas sem varrer o filtro inteiro e sem voltar ao início', async () => {
+    for (const id of [11, 12, 13, 14, 15, 16]) registrarResposta(id, 'A', true, 'portugues');
+    const fetchPaginado = vi.fn(async (url: string) => {
+      const depoisDe = Number(new URL(url, 'http://x').searchParams.get('depoisDe') ?? 10);
+      return new Response(JSON.stringify({ itens: [depoisDe + 1, depoisDe + 2], proximoCursor: depoisDe + 2 }));
+    }) as unknown as typeof fetch;
+
+    const r = await buscarProximaNaoResolvida('portugues', {
+      fetchFn: fetchPaginado,
+      depoisDe: 10,
+      maxPaginas: 2,
+      voltarAoInicio: false,
+    });
+
+    expect(r).toEqual({ status: 'limite_atingido', filtro: 'portugues' });
+    expect(fetchPaginado).toHaveBeenCalledTimes(2);
+  });
+
+  it('com voltarAoInicio false devolve sem_proxima e não consulta o início do filtro', async () => {
+    registrarResposta(30, 'A', true, 'portugues');
+    const fetchMock = vi.fn(async () =>
+      new Response(JSON.stringify({ itens: [30], proximoCursor: null })),
+    ) as unknown as typeof fetch;
+
+    const r = await buscarProximaNaoResolvida('portugues', {
+      fetchFn: fetchMock,
+      depoisDe: 20,
+      voltarAoInicio: false,
+    });
+
+    expect(r).toEqual({ status: 'sem_proxima', filtro: 'portugues' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });

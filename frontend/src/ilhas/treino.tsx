@@ -54,6 +54,9 @@ export function lerDadosTreino(elemento: HTMLElement): DadosTreino | null {
   };
 }
 
+/** Paginas de /api/questoes/ids consultadas por visualizacao para pular resolvidas (RF10 RN4). */
+export const MAX_PAGINAS_PROXIMA = 2;
+
 function extrairIdDaUrlQuestao(url: string | null): number | null {
   if (!url) return null;
   const match = /^\/questao\/(\d+)(?:\/|\?|$)/.exec(url);
@@ -62,6 +65,7 @@ function extrairIdDaUrlQuestao(url: string | null): number | null {
 
 export function IlhaTreino({ dados }: { dados: DadosTreino }) {
   const [escolha, setEscolha] = useState<string | null>(null);
+  const escolhaRef = useRef<string | null>(null);
   const [proximaUrl, setProximaUrl] = useState<string | null>(dados.proximaUrl);
   const proximaRef = useRef<HTMLAnchorElement>(null);
   const semArmazenamento = useMemo(() => !armazenamentoDisponivel(), []);
@@ -77,9 +81,15 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
     if (!lerOcultarResolvidas()) return;
     let cancelado = false;
 
-    buscarProximaNaoResolvida(dados.filtro, { depoisDe: dados.id })
+    // Limita as consultas a /api/questoes/ids por visualizacao: se nao achar dentro
+    // do limite, mantem o link renderizado pelo servidor (RNF03).
+    buscarProximaNaoResolvida(dados.filtro, {
+      depoisDe: dados.id,
+      maxPaginas: MAX_PAGINAS_PROXIMA,
+      voltarAoInicio: false,
+    })
       .then((resultado) => {
-        if (cancelado) return;
+        if (cancelado || resultado.status === 'limite_atingido') return;
         const linkNavProxima = document.querySelector<HTMLAnchorElement>('.navegacao-questao a[rel="next"]');
         if (resultado.status === 'encontrada') {
           const idOriginal = extrairIdDaUrlQuestao(dados.proximaUrl);
@@ -105,16 +115,22 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
     };
   }, [dados.id, dados.filtro, dados.proximaUrl]);
 
+  // RF06 RN2: a primeira escolha vale ate "Refazer". O ref evita registrar duas
+  // vezes quando dois eventos chegam antes da nova renderizacao.
   const responder = useCallback(
     (letra: string) => {
-      setEscolha((atual) => {
-        if (atual !== null) return atual;
-        registrarResposta(dados.id, letra, letra === dados.correta, dados.filtro);
-        return letra;
-      });
+      if (escolhaRef.current !== null) return;
+      escolhaRef.current = letra;
+      registrarResposta(dados.id, letra, letra === dados.correta, dados.filtro);
+      setEscolha(letra);
     },
     [dados],
   );
+
+  const refazer = useCallback(() => {
+    escolhaRef.current = null;
+    setEscolha(null);
+  }, []);
 
   useEffect(() => {
     if (escolha !== null) {
@@ -183,36 +199,41 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
         </p>
       )}
 
-      {respondida && (
-        <>
-          <div className={`fb ${acertou ? 'ok' : 'bad'}`} role="status">
-            <strong>{acertou ? 'Você acertou' : `Você errou. A correta é a ${dados.rotuloCorreta}`}</strong>
+      {/* Antes da resposta repete o <details>, o espaco do anuncio e o link que o
+          servidor renderizou, para a montagem da ilha nao deslocar a pagina (CLS, RNF03). */}
+      {respondida ? (
+        <div className={`fb ${acertou ? 'ok' : 'bad'}`} role="status">
+          <strong>{acertou ? 'Você acertou' : `Você errou. A correta é a ${dados.rotuloCorreta}`}</strong>
+          <div className="comentario texto" dangerouslySetInnerHTML={{ __html: dados.comentarioHtml }} />
+        </div>
+      ) : (
+        <details className="gabarito" data-gabarito>
+          <summary>Ver resposta</summary>
+          <div className="fb">
+            <strong>Gabarito: {dados.rotuloCorreta}</strong>
             <div className="comentario texto" dangerouslySetInnerHTML={{ __html: dados.comentarioHtml }} />
           </div>
-
-          {/* RF12 RN2: 100 px de distancia entre o espaco do anuncio e os botoes */}
-          <div className="espaco-anuncio-questao" data-espaco-anuncio aria-hidden="true" />
-
-          <div className="acoes-treino">
-            <a
-              ref={proximaRef}
-              className="btn btn-bloco"
-              href={proximaUrl ?? dados.listagemUrl}
-              data-proxima
-            >
-              {proximaUrl ? 'Próxima questão' : 'Ver mais questões'}
-            </a>
-            <button
-              type="button"
-              className="btn ghost btn-bloco"
-              onClick={() => setEscolha(null)}
-              data-refazer
-            >
-              Refazer
-            </button>
-          </div>
-        </>
+        </details>
       )}
+
+      {/* RF12 RN2: 100 px de distancia entre o espaco do anuncio e os botoes */}
+      <div className="espaco-anuncio-questao" data-espaco-anuncio aria-hidden="true" />
+
+      <div className="acoes-treino">
+        <a
+          ref={proximaRef}
+          className="btn btn-bloco"
+          href={proximaUrl ?? dados.listagemUrl}
+          data-proxima
+        >
+          {proximaUrl ? 'Próxima questão' : 'Ver mais questões'}
+        </a>
+        {respondida && (
+          <button type="button" className="btn ghost btn-bloco" onClick={refazer} data-refazer>
+            Refazer
+          </button>
+        )}
+      </div>
     </>
   );
 }

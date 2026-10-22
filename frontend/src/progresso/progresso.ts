@@ -49,12 +49,26 @@ export type ResultadoContinuar =
   | {
       status: 'vazio';
       filtro: string;
+    }
+  | {
+      // Nenhuma nao resolvida depois de depoisDe (so com voltarAoInicio: false)
+      status: 'sem_proxima';
+      filtro: string;
+    }
+  | {
+      // Parou em maxPaginas sem achar: o resultado e desconhecido
+      status: 'limite_atingido';
+      filtro: string;
     };
 
 export interface OpcoesBuscarProxima {
   storage?: Storage | null;
   fetchFn?: typeof fetch;
   depoisDe?: number;
+  /** Maximo de paginas de /api/questoes/ids consultadas depois de depoisDe (padrao: sem limite). */
+  maxPaginas?: number;
+  /** Se nao achar depois de depoisDe, consulta o inicio do filtro (padrao: true, RF10 RN3). */
+  voltarAoInicio?: boolean;
 }
 
 function vazio(): DadosProgresso {
@@ -425,6 +439,7 @@ export async function buscarProximaNaoResolvida(
 
   let cursor = depoisDeInicial;
   let primeiroIdDoFiltro: number | null = null;
+  let paginasLidas = 0;
 
   for (;;) {
     const pagina = await consultarPaginaIds(chaveFiltro, cursor, fetchFn);
@@ -445,7 +460,15 @@ export async function buscarProximaNaoResolvida(
     if (pagina.proximoCursor === null || pagina.itens.length === 0 || pagina.proximoCursor <= cursor) {
       break;
     }
+    paginasLidas++;
+    if (opcoes.maxPaginas !== undefined && paginasLidas >= opcoes.maxPaginas) {
+      return { status: 'limite_atingido', filtro: chaveFiltro };
+    }
     cursor = pagina.proximoCursor;
+  }
+
+  if (opcoes.voltarAoInicio === false) {
+    return { status: 'sem_proxima', filtro: chaveFiltro };
   }
 
   // Nao encontrou apos depoisDeInicial: se comecou depois de 0, busca do inicio do filtro (RF10 RN3)

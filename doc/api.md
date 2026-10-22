@@ -98,6 +98,9 @@ Regras das páginas:
 > Classificações: as listas aceitam `?busca=` (nome ou sigla; nas provas, cargo e siglas de banca e órgão) e a paginação do painel. Os assuntos de uma matéria vêm numa lista só, com `idAssuntoPai` e `nivel` (1 a 3). O campo `slug` é opcional: vazio na criação é gerado do nome (matéria e assunto) ou da sigla (banca e órgão); vazio na alteração mantém o atual. O slug da prova é sempre gerado (`banca-orgao-ano-cargo`).
 
 | Questões | `/api/admin/questoes` (+ `/publicar`, `/arquivar`, `/anular`, `/marcar-desatualizada`, `POST /api/admin/previa-markdown`) | EDITOR |
+
+> Questões: a lista aceita `?status=`, `?idMateria=` e `?busca=` (texto do enunciado). O `POST` cria sempre como `RASCUNHO`, e o `PUT` nunca muda o status (RF05 RN2). `/publicar` vale para rascunho e arquivada. `/anular` e `/marcar-desatualizada` aceitam `?desfazer=true`. `DELETE` só remove questão que nunca foi publicada; as outras são arquivadas. No certo/errado, o texto das alternativas é ignorado e gravado como "Certo" e "Errado". Trocar a letra correta ou o tipo zera as estatísticas (RF04 RN5). O slug vem do início do enunciado e deixa de mudar depois da primeira publicação. `POST /api/admin/previa-markdown` recebe `{ "markdown" }` e devolve `{ "html" }` já sanitizado.
+
 | Simulados | `/api/admin/simulados` (+ `/publicar`, `/arquivar`) | EDITOR |
 | Reportes | `/api/admin/reportes-erro` (+ `/resolver`, `/descartar`) | EDITOR |
 | Usuários | `/api/admin/usuarios` (+ `/inativar`, `/reativar`, `/desbloquear`, `/redefinir-senha`) | ADMIN |

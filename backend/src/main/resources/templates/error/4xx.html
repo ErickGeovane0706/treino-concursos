@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<!--/* Demais erros 4xx (ex.: 400, 405). Sem anuncio e noindex. */-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina('Não foi possível abrir a página', null, false, ${ {} }, ~{::.conteudo})}">
+<body>
+  <section class="conteudo card erro">
+    <p class="codigo" th:text="${status}">400</p>
+    <h1>Não foi possível abrir a página</h1>
+    <p>O endereço ou o pedido não é válido.</p>
+    <div class="acoes">
+      <a class="btn" href="/">Ir para o início</a>
+    </div>
+  </section>
+</body>
+</html>

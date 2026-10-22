@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<!--/* RF18 RN4: contato so por e-mail, sem formulario que guarde dados do visitante. */-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina('Contato',
+        'Fale com o Treino de Concursos por e-mail: dúvidas, sugestões e correções de questões.',
+        true, ${ {} }, ~{::.conteudo})}">
+<body>
+  <article class="conteudo card texto">
+    <h1>Contato</h1>
+    <p>
+      O contato é feito por e-mail:
+      <th:block th:replace="~{fragmentos/contato :: email}"></th:block>
+    </p>
+
+    <h2>Para agilizar a resposta</h2>
+    <ul>
+      <li><strong>Erro em questão:</strong> informe o número da questão (aparece no endereço da página, por exemplo
+        <code>/questao/1234/...</code>) e explique o problema: gabarito, enunciado ou comentário.</li>
+      <li><strong>Sugestão de matéria ou concurso:</strong> diga qual cargo, banca e órgão você está estudando.</li>
+      <li><strong>Privacidade:</strong> veja antes a <a href="/privacidade">Política de Privacidade</a>. Como não
+        guardamos dados pessoais de visitantes, em geral não há nada a consultar ou apagar do nosso lado.</li>
+    </ul>
+
+    <p>
+      Não há formulário de contato neste site: seu e-mail fica só na sua caixa de mensagens e na nossa,
+      e é usado apenas para responder a você.
+    </p>
+  </article>
+</body>
+</html>

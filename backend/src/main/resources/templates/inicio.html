@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<!--/* Pagina inicial provisoria: as materias e o "Continuar de onde parei" entram na issue #8 (RF07, RF10). */-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina(null,
+        'Banco de questões de concursos públicos grátis, sem limite diário e sem cadastro. Responda, veja o comentário e siga para a próxima.',
+        true, ${ {} }, ~{::.conteudo})}">
+<body>
+  <section class="conteudo card texto">
+    <h1>Questões de concursos grátis, sem cadastro</h1>
+    <p>
+      Resolva questões de provas de concursos públicos, veja na hora se acertou e leia o comentário de cada uma.
+      Não há limite diário nem cadastro: seu progresso fica guardado no seu próprio navegador.
+    </p>
+    <div class="acoes">
+      <a class="btn" href="/questoes">Começar a treinar</a>
+      <a class="btn ghost" href="/sobre">Como funciona</a>
+    </div>
+  </section>
+</body>
+</html>

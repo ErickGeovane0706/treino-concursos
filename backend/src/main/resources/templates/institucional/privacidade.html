@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<!--/*
+  RF18 RN3 e RNF08 (LGPD). Rascunho para revisao: os pontos marcados com TODO
+  dependem de quem implanta (nome, hospedagem) e, de preferencia, de uma
+  leitura por um profissional de direito antes de pedir o AdSense.
+*/-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina('Política de Privacidade',
+        'Como o Treino de Concursos trata seus dados: sem cadastro, progresso só no navegador, estatísticas anônimas e anúncios do Google.',
+        true, ${ {} }, ~{::.conteudo})}">
+<body>
+  <article class="conteudo card texto">
+    <h1>Política de Privacidade</h1>
+    <p class="atualizado">Última atualização: 19 de outubro de 2026.</p>
+
+    <p>
+      Esta política explica quais informações o <strong>Treino de Concursos</strong> trata quando você usa o site,
+      por quê, e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados Pessoais
+      (Lei nº 13.709/2018, LGPD).
+    </p>
+
+    <h2>Resumo</h2>
+    <ul>
+      <li>Você não precisa se cadastrar. Não pedimos nome, e-mail, CPF nem senha.</li>
+      <li>Seu progresso fica <strong>só no seu navegador</strong>. Ele não é enviado para os nossos servidores.</li>
+      <li>Contamos as respostas de forma <strong>anônima</strong>, sem nada que identifique você.</li>
+      <li>Os anúncios são do Google, que usa cookies. Anúncios personalizados só com o seu consentimento.</li>
+    </ul>
+
+    <h2>1. Quem é o responsável</h2>
+    <p>
+      O controlador dos dados é <th:block th:replace="~{fragmentos/contato :: responsavel}"></th:block>,
+      responsável pelo site. Para qualquer assunto de privacidade, inclusive para exercer seus direitos,
+      escreva para <th:block th:replace="~{fragmentos/contato :: email}"></th:block>.
+    </p>
+
+    <h2>2. O que não coletamos</h2>
+    <p>
+      Não temos cadastro de visitantes. Nosso banco de dados não guarda nome, e-mail, endereço IP nem qualquer
+      identificador de quem visita o site. Também não há formulário de contato: se você nos escrever, seu e-mail
+      fica apenas na troca de mensagens.
+    </p>
+
+    <h2>3. Progresso salvo no seu navegador</h2>
+    <p>
+      Para você continuar de onde parou, o site usa o <strong>armazenamento local do navegador</strong>
+      (<code>localStorage</code>). Ali ficam o número das questões que você resolveu, a alternativa escolhida, se
+      acertou ou errou e a última posição em cada lista. Essas informações ficam no seu aparelho e
+      <strong>não são enviadas</strong> para nós.
+    </p>
+    <p>
+      Você pode apagar tudo a qualquer momento limpando os dados do site nas configurações do navegador (e, quando
+      disponível, pela página "Meu progresso"). Se o navegador bloquear esse armazenamento, o site continua
+      funcionando; apenas o progresso não é guardado.
+    </p>
+
+    <h2>4. Estatísticas anônimas das questões</h2>
+    <p>
+      Quando você responde uma questão, o navegador envia ao servidor apenas o número da questão e a letra
+      escolhida. Com isso somamos quantas pessoas acertaram e quantas marcaram cada alternativa, e mostramos essas
+      porcentagens na página. Esse envio não inclui cookie, identificador nem endereço IP gravado: o que fica no
+      banco são só os totais.
+    </p>
+
+    <h2>5. Reportes de erro em questões</h2>
+    <p>
+      Se você reportar um erro em uma questão, guardamos o motivo e o texto que você escrever, para corrigir a
+      questão. <strong>Não escreva dados pessoais nesse campo.</strong>
+    </p>
+
+    <h2>6. Endereço IP e registros de acesso</h2>
+    <p>
+      Todo acesso a um site envolve o endereço IP do seu aparelho. Usamos o IP apenas em memória, por alguns
+      minutos, para limitar abusos (por exemplo, envio repetido de reportes), sem gravá-lo no banco de dados.
+      O servidor e a rede de entrega de conteúdo também mantêm registros técnicos de acesso (IP, data e hora,
+      página e navegador) por <strong>até 14 dias</strong>, para segurança e correção de falhas. A base legal é o
+      legítimo interesse de manter o site seguro e no ar (art. 7º, IX, da LGPD).
+    </p>
+    <!--/*
+      TODO: se o site passar a ser mantido por pessoa juridica (ex.: MEI) com fins economicos, o art. 15 do
+      Marco Civil da Internet (Lei 12.965/2014) exige guardar os registros de acesso por 6 meses. Revisar este
+      item e o RNF08 nesse caso.
+    */-->
+
+    <h2>7. Anúncios do Google AdSense</h2>
+    <p>
+      O site exibe anúncios do Google AdSense. O Google e seus parceiros usam cookies e identificadores para exibir
+      anúncios, limitar quantas vezes você vê o mesmo anúncio e medir os resultados.
+    </p>
+    <ul>
+      <li>No primeiro acesso perguntamos se você aceita <strong>anúncios personalizados</strong>, baseados nas suas
+        visitas a este e a outros sites. A base legal é o seu consentimento (art. 7º, I, da LGPD).</li>
+      <li>Se você recusar, o Google exibe <strong>anúncios não personalizados</strong>, que ainda usam cookies para
+        limitar a frequência, medir resultados e combater fraudes.</li>
+      <li>Você pode mudar a escolha quando quiser pelo link "Preferências de cookies", no rodapé.</li>
+    </ul>
+    <p>
+      Saiba como o Google usa esses dados em
+      <a href="https://policies.google.com/technologies/partner-sites?hl=pt-BR" rel="noopener">Como o Google usa
+      informações de sites que usam seus serviços</a> e gerencie os anúncios personalizados em
+      <a href="https://adssettings.google.com/" rel="noopener">Minha Central de Anúncios</a>.
+    </p>
+
+    <h2>8. Com quem os dados são compartilhados</h2>
+    <p>
+      Não vendemos nem compartilhamos dados de visitantes. Os únicos terceiros envolvidos são os que fazem o site
+      funcionar: o Google (anúncios), o provedor de hospedagem e a rede de entrega de conteúdo, que recebem os
+      dados técnicos de acesso descritos acima. Alguns deles podem processar esses dados fora do Brasil, com as
+      garantias previstas no art. 33 da LGPD.
+      <!--/* TODO: citar o provedor de hospedagem (ex.: nome da VPS) e a Cloudflare, quando o deploy (issue #11) estiver definido. */-->
+    </p>
+
+    <h2>9. Seus direitos</h2>
+    <p>
+      A LGPD (art. 18) garante a você, entre outros, os direitos de confirmar se tratamos seus dados, acessá-los,
+      corrigi-los, pedir a eliminação e revogar o consentimento. Como não guardamos dados que identifiquem
+      visitantes, na maioria dos casos não haverá nada a consultar ou apagar do nosso lado: o progresso e a escolha
+      de cookies estão no seu navegador, sob o seu controle. Pedidos podem ser enviados para
+      <th:block th:replace="~{fragmentos/contato :: email}"></th:block>. Você também pode reclamar à Autoridade
+      Nacional de Proteção de Dados (ANPD).
+    </p>
+
+    <h2>10. Crianças e adolescentes</h2>
+    <p>
+      O site é voltado a quem estuda para concursos públicos e não se destina a crianças. Não coletamos
+      conscientemente dados de menores de idade.
+    </p>
+
+    <h2>11. Mudanças nesta política</h2>
+    <p>
+      Se esta política mudar, a data no início da página será atualizada. Mudanças importantes, como um novo uso
+      de dados, serão avisadas no próprio site.
+    </p>
+  </article>
+</body>
+</html>

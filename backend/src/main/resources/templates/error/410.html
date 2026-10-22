@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<!--/* RF05 RN3: questao arquivada. Sem anuncio e noindex. */-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina('Conteúdo removido', null, false, ${ {} }, ~{::.conteudo})}">
+<body>
+  <section class="conteudo card erro">
+    <p class="codigo">410</p>
+    <h1>Este conteúdo foi removido</h1>
+    <p>A questão que você procura saiu do nosso acervo. Há muitas outras esperando por você.</p>
+    <div class="acoes">
+      <a class="btn" href="/questoes">Ver questões</a>
+      <a class="btn ghost" href="/">Ir para o início</a>
+    </div>
+  </section>
+</body>
+</html>

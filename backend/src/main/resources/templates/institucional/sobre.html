@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina('Sobre',
+        'Conheça o Treino de Concursos: banco de questões gratuito, sem cadastro e mantido por anúncios.',
+        true, ${ {} }, ~{::.conteudo})}">
+<body>
+  <article class="conteudo card texto">
+    <h1>Sobre o Treino de Concursos</h1>
+    <p>
+      O <strong>Treino de Concursos</strong> é um banco de questões de concursos públicos
+      <strong>gratuito, sem limite diário e sem cadastro</strong>. A ideia é simples: você abre uma questão,
+      responde, vê na hora se acertou, lê o comentário e segue para a próxima.
+    </p>
+
+    <h2>Como funciona</h2>
+    <ul>
+      <li>As questões são organizadas por matéria e assunto, sempre na mesma ordem, para você retomar de onde parou.</li>
+      <li>Seu progresso (questões resolvidas, acertos e erros) fica salvo <strong>só no seu navegador</strong>.
+        Não pedimos e-mail, senha nem qualquer dado pessoal.</li>
+      <li>Cada questão tem um comentário explicando por que a alternativa correta está certa e as outras, erradas.</li>
+    </ul>
+
+    <h2>De onde vêm as questões</h2>
+    <p>
+      Usamos questões de provas de concursos públicos já aplicadas, sempre com a banca, o órgão e o ano indicados,
+      e questões autorais, escritas pela nossa equipe e identificadas como "Questão autoral". Os comentários são
+      produção própria. Questões anuladas pela banca ou desatualizadas por mudança na lei recebem um aviso.
+    </p>
+
+    <h2>Como o site se mantém</h2>
+    <p>
+      O site é mantido por anúncios do Google AdSense. É isso que permite oferecer tudo de graça.
+      Você escolhe se aceita anúncios personalizados; veja a <a href="/cookies">Política de Cookies</a>.
+    </p>
+
+    <h2>Encontrou um erro?</h2>
+    <p>
+      Gabarito, enunciado ou comentário com problema? Escreva para
+      <th:block th:replace="~{fragmentos/contato :: email}"></th:block>
+      informando o número da questão. Toda correção é bem-vinda.
+    </p>
+
+    <h2>Quem mantém</h2>
+    <p>
+      O Treino de Concursos é mantido por <th:block th:replace="~{fragmentos/contato :: responsavel}"></th:block>.
+      <!--/* TODO: uma ou duas frases sobre quem você é e por que criou o site (ajuda na aprovação do AdSense). */-->
+    </p>
+  </article>
+</body>
+</html>

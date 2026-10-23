@@ -38,6 +38,7 @@ public class QuestaoPublicaController {
             return null;
         }
         model.addAttribute("questao", questao);
+        model.addAttribute("exibirAnuncios", true);
         return "questao";
     }
 }

@@ -92,12 +92,12 @@ public class SecurityConfig {
                 ? ""
                 : " " + servidorViteDev.trim() + " " + servidorViteDev.trim().replaceFirst("^http", "ws");
         return "default-src 'self';"
-                + " script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://adservice.google.com https://www.googletagservices.com https://tpc.googlesyndication.com https://ep2.adtrafficquality.google" + origensDev + ";"
+                + " script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://adservice.google.com https://www.googletagservices.com https://tpc.googlesyndication.com https://ep2.adtrafficquality.google https://fundingchoicesmessages.google.com" + origensDev + ";"
                 + " style-src 'self' 'unsafe-inline'" + origensDev + ";"
                 + " img-src 'self' data: https:;"
-                + " font-src 'self' data:;"
-                + " connect-src 'self' https://pagead2.googlesyndication.com https://adservice.google.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google" + origensDev + ";"
-                + " frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://ep2.adtrafficquality.google;"
+                + " font-src 'self' data: https://fonts.gstatic.com;"
+                + " connect-src 'self' https://pagead2.googlesyndication.com https://adservice.google.com https://googleads.g.doubleclick.net https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://fundingchoicesmessages.google.com" + origensDev + ";"
+                + " frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://pagead2.googlesyndication.com https://www.google.com https://ep2.adtrafficquality.google https://fundingchoicesmessages.google.com;"
                 + " object-src 'none';"
                 + " base-uri 'self'";
     }

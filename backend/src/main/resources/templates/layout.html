@@ -24,6 +24,7 @@
   <link rel="preload" href="/fontes/public-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/site.css">
   <th:block th:replace="~{fragmentos/vite :: cabecalho(${ilhas})}"></th:block>
+  <th:block th:if="${exibirAnuncios == true}" th:replace="~{fragmentos/bloco-anuncio :: script}"></th:block>
 </head>
 <body>
   <a class="pular" href="#conteudo">Pular para o conteúdo</a>

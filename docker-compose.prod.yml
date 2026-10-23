@@ -1,0 +1,127 @@
+# ==============================================================================
+# Treino de Concursos - Docker Compose de PRODUCAO (RNF04, RNF09, RNF01)
+#
+# Servicos:
+#   - db:     PostgreSQL 17 apenas na rede interna (SEM porta exposta)
+#   - app:    Imagem unica (Spring Boot + build do Vite) com JRE 21 e -Xmx512m,
+#             escutando so em 127.0.0.1:8080 atras do proxy reverso (HTTPS)
+#   - backup: Rotina diaria com pg_dump, retencao de 30 dias e envio externo
+#
+# Subir / atualizar:
+#   docker compose -f docker-compose.prod.yml up -d --build
+# ==============================================================================
+
+name: treino-concursos-prod
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: treino-concursos-db
+    restart: unless-stopped
+    environment:
+      TZ: America/Sao_Paulo
+      POSTGRES_DB: ${DB_NAME:-treino_concursos}
+      POSTGRES_USER: ${DB_USERNAME:-treino}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+    # Sem secao "ports:": o PostgreSQL NAO fica exposto para a internet nem no
+    # host; apenas os containers na rede-interna conseguem se conectar.
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - rede-interna
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: treino-concursos-app:latest
+    container_name: treino-concursos-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      TZ: America/Sao_Paulo
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8080
+      JAVA_OPTS: "-XX:+UseContainerSupport"
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-treino_concursos}
+      DB_USERNAME: ${DB_USERNAME:-treino}
+      DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+      SITE_URL: ${SITE_URL:?Defina SITE_URL no .env (ex. https://www.seudominio.com.br)}
+      CONTATO_EMAIL: ${CONTATO_EMAIL:?Defina CONTATO_EMAIL no .env}
+      CONTATO_RESPONSAVEL: ${CONTATO_RESPONSAVEL:?Defina CONTATO_RESPONSAVEL no .env}
+      ADMIN_INICIAL_EMAIL: ${ADMIN_INICIAL_EMAIL:?Defina ADMIN_INICIAL_EMAIL no .env}
+      ADMIN_INICIAL_SENHA: ${ADMIN_INICIAL_SENHA:?Defina ADMIN_INICIAL_SENHA no .env}
+      ADS_ENABLED: ${ADS_ENABLED:-false}
+      ADSENSE_PUBLISHER_ID: ${ADSENSE_PUBLISHER_ID:-}
+      ADSENSE_SLOT_QUESTAO: ${ADSENSE_SLOT_QUESTAO:-}
+      ADSENSE_SLOT_LATERAL: ${ADSENSE_SLOT_LATERAL:-}
+      VITE_DEV_SERVER: ""
+    # Escuta apenas em loopback (127.0.0.1); o Caddy/Nginx recebe 80/443 da
+    # Cloudflare com certificado de origem e repassa para 127.0.0.1:8080.
+    ports:
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-8080}:8080"
+    networks:
+      - rede-interna
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/sobre || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  backup:
+    image: postgres:17-alpine
+    container_name: treino-concursos-backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      TZ: America/Sao_Paulo
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: ${DB_NAME:-treino_concursos}
+      PGUSER: ${DB_USERNAME:-treino}
+      PGPASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+      BACKUP_DIR: /backups
+      BACKUP_RETENCAO_DIAS: ${BACKUP_RETENCAO_DIAS:-30}
+      BACKUP_CRON: ${BACKUP_CRON:-0 3 * * *}
+      # Armazenamento externo compativel com S3 (Cloudflare R2, Backblaze B2, AWS S3) via rclone
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      BACKUP_S3_PREFIXO: ${BACKUP_S3_PREFIXO:-treino-concursos}
+      RCLONE_CONFIG_EXTERNO_TYPE: s3
+      RCLONE_CONFIG_EXTERNO_PROVIDER: ${BACKUP_S3_PROVIDER:-Cloudflare}
+      RCLONE_CONFIG_EXTERNO_ENV_AUTH: "false"
+      RCLONE_CONFIG_EXTERNO_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      RCLONE_CONFIG_EXTERNO_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+      RCLONE_CONFIG_EXTERNO_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      RCLONE_CONFIG_EXTERNO_ACL: private
+    volumes:
+      - ./deploy/backup.sh:/usr/local/bin/backup.sh:ro
+      - backups-data:/backups
+    networks:
+      - rede-interna
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache rclone tzdata >/dev/null
+        echo "$${BACKUP_CRON} /bin/sh /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
+        touch /var/log/backup.log
+        echo "Agendador de backup ativo ($${BACKUP_CRON})."
+        crond -f -l 8
+
+volumes:
+  postgres-data:
+  backups-data:
+
+networks:
+  rede-interna:
+    driver: bridge

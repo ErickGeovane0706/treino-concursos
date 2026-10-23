@@ -1,0 +1,30 @@
+# Git e metadados do repositorio
+.git
+.github
+.claude
+.idea
+.vscode
+
+# Segredos locais (nunca entram na imagem)
+.env
+.env.*
+**/.*.env
+**/.env
+*.pem
+*.key
+
+# Artefatos de build e dependencias locais
+node_modules
+frontend/node_modules
+frontend/dist
+frontend/coverage
+backend/target
+backend/.mvn/wrapper/maven-wrapper.jar
+backups
+
+# Documentacao e testes E2E
+doc
+README.md
+CLAUDE.md
+playwright-report
+test-results

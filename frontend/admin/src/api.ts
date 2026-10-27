@@ -259,3 +259,44 @@ export const questoes = {
 /** HTML ja sanitizado pelo MarkdownService do backend (o mesmo das paginas publicas). */
 export const previaMarkdown = (markdown: string) =>
   requisitar<{ html: string }>('POST', '/api/admin/previa-markdown', { markdown });
+
+// ---------- reportes de erro (US12, RF16) ----------
+
+export type MotivoReporte =
+  | 'GABARITO_ERRADO'
+  | 'ENUNCIADO_COM_ERRO'
+  | 'COMENTARIO_INCORRETO'
+  | 'QUESTAO_DESATUALIZADA'
+  | 'OUTRO';
+
+export type StatusReporte = 'ABERTO' | 'RESOLVIDO' | 'DESCARTADO';
+
+export interface ReporteErro {
+  id: number;
+  idQuestao: number;
+  trechoQuestao: string;
+  nomeMateria: string;
+  motivo: MotivoReporte;
+  descricao: string | null;
+  status: StatusReporte;
+  prioritario: boolean;
+  reportesGabaritoAbertos: number;
+  criadoEm: string;
+  idResolvidoPor: number | null;
+  nomeResolvidoPor: string | null;
+  resolvidoEm: string | null;
+  observacaoResolucao: string | null;
+}
+
+export const reportesErro = {
+  listar: (status: StatusReporte | '', pagina: number, tamanho = 20) => {
+    const params = new URLSearchParams({ page: String(pagina), size: String(tamanho) });
+    if (status) params.set('status', status);
+    return requisitar<Pagina<ReporteErro>>('GET', `/api/admin/reportes-erro?${params}`);
+  },
+  buscar: (id: number) => requisitar<ReporteErro>('GET', `/api/admin/reportes-erro/${id}`),
+  resolver: (id: number, observacao: string | null) =>
+    requisitar<ReporteErro>('PATCH', `/api/admin/reportes-erro/${id}/resolver`, { observacao }),
+  descartar: (id: number, observacao: string | null) =>
+    requisitar<ReporteErro>('PATCH', `/api/admin/reportes-erro/${id}/descartar`, { observacao }),
+};

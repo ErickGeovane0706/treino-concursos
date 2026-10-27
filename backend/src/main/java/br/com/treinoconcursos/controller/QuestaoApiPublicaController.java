@@ -2,10 +2,13 @@ package br.com.treinoconcursos.controller;
 
 import br.com.treinoconcursos.dto.EstatisticasQuestaoResponse;
 import br.com.treinoconcursos.dto.QuestoesIdsResponse;
+import br.com.treinoconcursos.dto.ReporteErroPublicoResponse;
+import br.com.treinoconcursos.dto.ReporteErroRequest;
 import br.com.treinoconcursos.dto.RespostaQuestaoRequest;
 import br.com.treinoconcursos.service.EstatisticasQuestaoService;
 import br.com.treinoconcursos.service.LimitadorPorIpService;
 import br.com.treinoconcursos.service.NavegacaoQuestoesService;
+import br.com.treinoconcursos.service.ReporteErroService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,20 +25,24 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Endpoints JSON publicos de navegacao e estatisticas anonimas das questoes (RF07, RF10, RF17).
+ * Endpoints JSON publicos de navegacao, estatisticas anonimas e reportes de erro das questoes (RF07, RF10, RF16, RF17).
  */
-@Tag(name = "Questões (público)", description = "Navegação em ordem fixa por cursor e estatísticas anônimas (RF07, RF10, RF17)")
+@Tag(name = "Questões (público)", description = "Navegação em ordem fixa por cursor, estatísticas anônimas e reportes de erro (RF07, RF10, RF16, RF17)")
 @RestController
 @RequestMapping("/api/questoes")
 public class QuestaoApiPublicaController {
 
     private final NavegacaoQuestoesService navegacaoService;
     private final EstatisticasQuestaoService estatisticasService;
+    private final ReporteErroService reporteErroService;
 
-    public QuestaoApiPublicaController(NavegacaoQuestoesService navegacaoService,
-            EstatisticasQuestaoService estatisticasService) {
+    public QuestaoApiPublicaController(
+            NavegacaoQuestoesService navegacaoService,
+            EstatisticasQuestaoService estatisticasService,
+            ReporteErroService reporteErroService) {
         this.navegacaoService = navegacaoService;
         this.estatisticasService = estatisticasService;
+        this.reporteErroService = reporteErroService;
     }
 
     @Operation(summary = "Listar ids de questões publicadas do filtro em ordem crescente", description = "Perfil: público")
@@ -70,5 +77,19 @@ public class QuestaoApiPublicaController {
     @GetMapping("/{id}/estatisticas")
     public EstatisticasQuestaoResponse buscarEstatisticas(@PathVariable Integer id) {
         return estatisticasService.buscarEstatisticas(id);
+    }
+
+    @Operation(summary = "Reportar erro em questão publicada", description = "Perfil: público. Sem coleta de dados pessoais (RF16 RN1-RN3, US07).")
+    @ApiResponse(responseCode = "201", description = "Reporte registrado com status ABERTO")
+    @ApiResponse(responseCode = "400", description = "Motivo ausente/inválido ou descrição acima de 1.000 caracteres")
+    @ApiResponse(responseCode = "404", description = "Questão não encontrada ou não publicada")
+    @ApiResponse(responseCode = "429", description = "Limite de 5 reportes por hora por IP excedido")
+    @PostMapping("/{id}/reportes")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ReporteErroPublicoResponse registrarReporte(
+            @PathVariable Integer id,
+            @Valid @RequestBody ReporteErroRequest request,
+            HttpServletRequest httpRequest) {
+        return reporteErroService.registrarReporte(id, request, LimitadorPorIpService.extrairIp(httpRequest));
     }
 }

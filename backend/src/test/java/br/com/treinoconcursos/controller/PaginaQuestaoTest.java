@@ -139,6 +139,8 @@ class PaginaQuestaoTest extends IntegracaoTest {
                 .andExpect(content().string(containsString("Gabarito: B")))
                 .andExpect(content().string(containsString("concorda com o núcleo do sujeito")))
                 .andExpect(content().string(containsString("data-espaco-anuncio")))
+                .andExpect(content().string(containsString("data-ilha=\"reporte\"")))
+                .andExpect(content().string(containsString("Reportar erro")))
                 .andExpect(content().string(containsString("/questoes/lingua-portuguesa/concordancia-verbal")))
                 .andExpect(content().string(not(containsString("<form"))))
                 .andReturn();

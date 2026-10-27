@@ -278,7 +278,34 @@ class RestricoesBancoTest extends IntegracaoTest {
                 .anyMatch(d -> d.startsWith("ix_assuntos_materia "))
                 .anyMatch(d -> d.startsWith("ix_provas_banca "))
                 .anyMatch(d -> d.startsWith("ix_provas_orgao "))
-                .anyMatch(d -> d.startsWith("ix_alternativas_questao "));
+                .anyMatch(d -> d.startsWith("ix_alternativas_questao "))
+                .anyMatch(d -> d.startsWith("ix_reportes_abertos ") && d.contains("'ABERTO'"));
+    }
+
+    // ---------- reportes de erro (RF16, V4__reportes.sql) ----------
+
+    @Test
+    void recusaReporteComMotivoStatusOuDescricaoInvalidosNoBanco() {
+        Questao questao = questaoRepository.saveAndFlush(questaoAutoral(StatusQuestao.PUBLICADA, "Comentário."));
+
+        assertViolacao(
+                () -> jdbc.update(
+                        "INSERT INTO reportes_erro (id_questao, motivo, status) VALUES (?, 'MOTIVO_INVALIDO', 'ABERTO')",
+                        questao.getId()),
+                "ck_reportes_motivo");
+
+        assertViolacao(
+                () -> jdbc.update(
+                        "INSERT INTO reportes_erro (id_questao, motivo, status) VALUES (?, 'OUTRO', 'INVALIDO')",
+                        questao.getId()),
+                "ck_reportes_status");
+
+        assertViolacao(
+                () -> jdbc.update(
+                        "INSERT INTO reportes_erro (id_questao, motivo, descricao, status) VALUES (?, 'OUTRO', ?, 'ABERTO')",
+                        questao.getId(),
+                        "x".repeat(1001)),
+                "ck_reportes_descricao");
     }
 
     // ---------- apoio ----------

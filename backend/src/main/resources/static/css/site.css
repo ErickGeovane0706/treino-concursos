@@ -648,6 +648,86 @@ h1 {
   padding: 16px 20px;
 }
 
+/* ---------- reporte de erro na questao (RF16, US07) ---------- */
+
+.secao-reporte {
+  margin-top: 20px;
+}
+
+.btn-reportar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-reportar:hover {
+  border-color: var(--brand);
+  color: var(--ink);
+}
+
+.form-reporte {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.campo-reporte {
+  display: grid;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.campo-reporte select,
+.campo-reporte textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 400 15px/1.45 inherit;
+}
+
+.acoes-reporte {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.aviso-reporte-enviado {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--ok-bg);
+  color: var(--ok);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.erro-reporte {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--bad-bg);
+  color: var(--bad);
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .navegacao-questao {
   display: flex;
   flex-wrap: wrap;

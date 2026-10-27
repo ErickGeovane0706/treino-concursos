@@ -8,7 +8,7 @@ import {
   lerProgresso,
   registrarResposta,
 } from '../progresso/progresso';
-import { IlhaTreino, iniciarIlhaTreino, lerDadosTreino, type DadosTreino } from './treino';
+import { IlhaReporte, IlhaTreino, iniciarIlhaTreino, lerDadosTreino, type DadosTreino } from './treino';
 
 function criarDadosPadrao(parcial: Partial<DadosTreino> = {}): DadosTreino {
   return {
@@ -284,6 +284,56 @@ describe('Ilha de treino da questão', () => {
     // Com menos de 30 respostas, nao exibe percentual (RF17 RN3)
     expect(document.querySelector('[data-estatistica-acertos]')).toBeNull();
     expect(document.querySelector('[data-estatistica-alternativa]')).toBeNull();
+  });
+
+  it('abre o formulário de reporte de erro sem dados pessoais e envia POST /api/questoes/{id}/reportes (RF16 RN1–RN2, US07)', async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ id: 7, idQuestao: 42, motivo: 'GABARITO_ERRADO', status: 'ABERTO' }), {
+        status: 201,
+      }),
+    );
+
+    render(<IlhaReporte idQuestao={42} />);
+
+    await user.click(screen.getByRole('button', { name: 'Reportar erro' }));
+
+    // RF16 RN2: formulario pequeno sem campos de nome ou e-mail
+    expect(screen.queryByLabelText(/nome/i)).toBeNull();
+    expect(screen.queryByLabelText(/e-mail|email/i)).toBeNull();
+
+    await user.selectOptions(screen.getByLabelText('Motivo do reporte'), 'COMENTARIO_INCORRETO');
+    await user.type(screen.getByLabelText('Descrição (opcional)'), 'O artigo citado foi revogado.');
+    await user.click(screen.getByRole('button', { name: 'Enviar reporte' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Reporte enviado');
+    expect(fetchSpy).toHaveBeenCalledWith('/api/questoes/42/reportes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        motivo: 'COMENTARIO_INCORRETO',
+        descricao: 'O artigo citado foi revogado.',
+      }),
+    });
+  });
+
+  it('exibe a mensagem de erro quando o limite de reportes por IP (429) é atingido (RF16 RN3)', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          status: 429,
+          detail: 'Muitas requisições deste endereço em pouco tempo. Tente novamente mais tarde.',
+        }),
+        { status: 429, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    render(<IlhaReporte idQuestao={42} />);
+    await user.click(screen.getByRole('button', { name: 'Reportar erro' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar reporte' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Muitas requisições deste endereço');
   });
 });
 

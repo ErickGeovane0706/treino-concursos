@@ -8,6 +8,7 @@ import { MateriaForm, MateriasLista } from './paginas/Materias';
 import { OrgaoForm, OrgaosLista } from './paginas/Orgaos';
 import { ProvaForm, ProvasLista } from './paginas/Provas';
 import { QuestaoFormRota, QuestoesLista } from './paginas/Questoes';
+import { ReportesFila } from './paginas/Reportes';
 import { Usuarios } from './Usuarios';
 
 // SPA do painel: sem sessao mostra o login; com sessao, o painel com as rotas.
@@ -38,6 +39,7 @@ export function App() {
   const admin = usuario.perfil === 'ADMIN';
   const itens = [
     { para: '/questoes', texto: 'Questões' },
+    { para: '/reportes', texto: 'Reportes' },
     { para: '/materias', texto: 'Matérias' },
     { para: '/bancas', texto: 'Bancas' },
     { para: '/orgaos', texto: 'Órgãos' },
@@ -73,6 +75,7 @@ export function App() {
         <Route path="/" element={<Navigate to="/questoes" replace />} />
         <Route path="/questoes" element={<QuestoesLista />} />
         <Route path="/questoes/:id" element={<QuestaoFormRota />} />
+        <Route path="/reportes" element={<ReportesFila />} />
         <Route path="/materias" element={<MateriasLista />} />
         <Route path="/materias/:id" element={<MateriaForm />} />
         <Route path="/materias/:idMateria/assuntos" element={<AssuntosLista />} />

@@ -72,6 +72,11 @@
         </div>
       </div>
 
+      <!--/* RF16 RN1-RN3, US07: botao para reportar erro sem coletar dados pessoais */-->
+      <div class="secao-reporte" data-ilha="reporte" th:attr="data-id=${questao.id}">
+        <button type="button" class="btn-reportar" data-abrir-reporte>Reportar erro</button>
+      </div>
+
       <nav class="navegacao-questao" aria-label="Navegação da questão">
         <a class="link-nav" th:if="${questao.anteriorUrl != null}" th:href="${questao.anteriorUrl}" rel="prev">
           ← Questão anterior

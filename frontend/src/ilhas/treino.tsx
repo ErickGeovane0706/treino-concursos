@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   armazenamentoDisponivel,
   buscarProximaNaoResolvida,
@@ -8,6 +8,21 @@ import {
   registrarUltimaVista,
 } from '../progresso/progresso';
 import { montarIlha } from './montar';
+
+export type MotivoReporte =
+  | 'GABARITO_ERRADO'
+  | 'ENUNCIADO_COM_ERRO'
+  | 'COMENTARIO_INCORRETO'
+  | 'QUESTAO_DESATUALIZADA'
+  | 'OUTRO';
+
+export const MOTIVOS_REPORTE: { valor: MotivoReporte; texto: string }[] = [
+  { valor: 'GABARITO_ERRADO', texto: 'Gabarito errado' },
+  { valor: 'ENUNCIADO_COM_ERRO', texto: 'Enunciado com erro' },
+  { valor: 'COMENTARIO_INCORRETO', texto: 'Comentário incorreto' },
+  { valor: 'QUESTAO_DESATUALIZADA', texto: 'Questão desatualizada' },
+  { valor: 'OUTRO', texto: 'Outro motivo' },
+];
 
 export interface AlternativaTreino {
   letra: string;
@@ -331,10 +346,133 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
   );
 }
 
+export function IlhaReporte({ idQuestao }: { idQuestao: number }) {
+  const [aberto, setAberto] = useState(false);
+  const [motivo, setMotivo] = useState<MotivoReporte>('GABARITO_ERRADO');
+  const [descricao, setDescricao] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAberto(false);
+    setMotivo('GABARITO_ERRADO');
+    setDescricao('');
+    setEnviando(false);
+    setEnviado(false);
+    setErro(null);
+  }, [idQuestao]);
+
+  async function enviarReporte(evento: FormEvent) {
+    evento.preventDefault();
+    if (enviando) return;
+    setErro(null);
+    setEnviando(true);
+    try {
+      const resposta = await globalThis.fetch(`/api/questoes/${idQuestao}/reportes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          motivo,
+          descricao: descricao.trim() ? descricao.trim() : null,
+        }),
+      });
+      if (!resposta.ok) {
+        const problema = await resposta.json().catch(() => null);
+        const mensagem =
+          problema && typeof problema.detail === 'string'
+            ? problema.detail
+            : 'Não foi possível enviar o reporte agora. Tente novamente mais tarde.';
+        setErro(mensagem);
+        return;
+      }
+      setEnviado(true);
+      setAberto(false);
+      setDescricao('');
+    } catch {
+      setErro('Não foi possível enviar o reporte agora. Tente novamente mais tarde.');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  function cancelar() {
+    setAberto(false);
+    setErro(null);
+  }
+
+  if (enviado) {
+    return (
+      <p className="aviso-reporte-enviado" role="status" data-reporte-enviado>
+        Reporte enviado. Obrigado por ajudar a melhorar o acervo!
+      </p>
+    );
+  }
+
+  if (!aberto) {
+    return (
+      <button type="button" className="btn-reportar" data-abrir-reporte onClick={() => setAberto(true)}>
+        Reportar erro
+      </button>
+    );
+  }
+
+  return (
+    <form className="form-reporte" data-form-reporte onSubmit={enviarReporte}>
+      <label className="campo-reporte">
+        <span>Motivo do reporte</span>
+        <select
+          required
+          aria-label="Motivo do reporte"
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value as MotivoReporte)}
+        >
+          {MOTIVOS_REPORTE.map((m) => (
+            <option key={m.valor} value={m.valor}>
+              {m.texto}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="campo-reporte">
+        <span>Descrição (opcional)</span>
+        <textarea
+          aria-label="Descrição (opcional)"
+          rows={3}
+          maxLength={1000}
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          placeholder="Descreva o problema encontrado (até 1.000 caracteres)"
+        />
+      </label>
+
+      {erro && (
+        <p role="alert" className="erro-reporte" data-erro-reporte>
+          {erro}
+        </p>
+      )}
+
+      <div className="acoes-reporte">
+        <button type="submit" className="btn" disabled={enviando} data-enviar-reporte>
+          {enviando ? 'Enviando...' : 'Enviar reporte'}
+        </button>
+        <button type="button" className="btn ghost" disabled={enviando} onClick={cancelar} data-cancelar-reporte>
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export function iniciarIlhaTreino(): void {
   montarIlha('treino', (elemento) => {
     const dados = lerDadosTreino(elemento);
     return dados ? <IlhaTreino dados={dados} /> : null;
+  });
+  montarIlha('reporte', (elemento) => {
+    const id = Number(elemento.dataset.id);
+    return id ? <IlhaReporte idQuestao={id} /> : null;
   });
 }
 

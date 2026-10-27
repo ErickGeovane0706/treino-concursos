@@ -1,27 +1,41 @@
 package br.com.treinoconcursos.controller;
 
+import br.com.treinoconcursos.dto.EstatisticasQuestaoResponse;
 import br.com.treinoconcursos.dto.QuestoesIdsResponse;
+import br.com.treinoconcursos.dto.RespostaQuestaoRequest;
+import br.com.treinoconcursos.service.EstatisticasQuestaoService;
+import br.com.treinoconcursos.service.LimitadorPorIpService;
 import br.com.treinoconcursos.service.NavegacaoQuestoesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Endpoints JSON publicos de navegacao das questoes (RF07, RF10).
+ * Endpoints JSON publicos de navegacao e estatisticas anonimas das questoes (RF07, RF10, RF17).
  */
-@Tag(name = "Questões (público)", description = "Navegação em ordem fixa por cursor (RF07, RF10)")
+@Tag(name = "Questões (público)", description = "Navegação em ordem fixa por cursor e estatísticas anônimas (RF07, RF10, RF17)")
 @RestController
 @RequestMapping("/api/questoes")
 public class QuestaoApiPublicaController {
 
     private final NavegacaoQuestoesService navegacaoService;
+    private final EstatisticasQuestaoService estatisticasService;
 
-    public QuestaoApiPublicaController(NavegacaoQuestoesService navegacaoService) {
+    public QuestaoApiPublicaController(NavegacaoQuestoesService navegacaoService,
+            EstatisticasQuestaoService estatisticasService) {
         this.navegacaoService = navegacaoService;
+        this.estatisticasService = estatisticasService;
     }
 
     @Operation(summary = "Listar ids de questões publicadas do filtro em ordem crescente", description = "Perfil: público")
@@ -33,5 +47,28 @@ public class QuestaoApiPublicaController {
             @RequestParam(required = false) Integer depoisDe,
             @RequestParam(required = false) Integer limite) {
         return navegacaoService.buscarIds(materia, assunto, depoisDe, limite);
+    }
+
+    @Operation(summary = "Registrar resposta anônima da questão", description = "Perfil: público")
+    @ApiResponse(responseCode = "202", description = "Resposta anônima contabilizada")
+    @ApiResponse(responseCode = "400", description = "Letra inválida")
+    @ApiResponse(responseCode = "404", description = "Questão não encontrada ou não publicada")
+    @ApiResponse(responseCode = "409", description = "Alternativa não pertence à questão")
+    @ApiResponse(responseCode = "429", description = "Limite de requisições por IP excedido")
+    @PostMapping("/{id}/respostas")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void registrarResposta(
+            @PathVariable Integer id,
+            @Valid @RequestBody RespostaQuestaoRequest request,
+            HttpServletRequest httpRequest) {
+        estatisticasService.registrarResposta(id, request, LimitadorPorIpService.extrairIp(httpRequest));
+    }
+
+    @Operation(summary = "Consultar estatísticas anônimas da questão", description = "Perfil: público")
+    @ApiResponse(responseCode = "200", description = "Estatísticas da questão (percentuais exibidos com 30 ou mais respostas)")
+    @ApiResponse(responseCode = "404", description = "Questão não encontrada ou não publicada")
+    @GetMapping("/{id}/estatisticas")
+    public EstatisticasQuestaoResponse buscarEstatisticas(@PathVariable Integer id) {
+        return estatisticasService.buscarEstatisticas(id);
     }
 }

@@ -78,6 +78,14 @@ class SecurityConfigTest {
                 .andExpect(status().isForbidden());
     }
 
+    /** doc/api.md secao 9: os dois POST publicos (respostas e reportes) sao isentos de CSRF. */
+    @Test
+    void postPublicoDeRespostasEhIsentoDeCsrfENaoGravaCookieNoVisitante() throws Exception {
+        mockMvc.perform(post("/api/questoes/1/respostas"))
+                .andExpect(status().isOk())
+                .andExpect(cookie().doesNotExist("XSRF-TOKEN"));
+    }
+
     /**
      * A SPA precisa receber o cookie XSRF-TOKEN antes do primeiro POST (o login).
      * Fica aqui porque o csrf() dos testes de integracao troca o repositorio de
@@ -136,7 +144,7 @@ class SecurityConfigTest {
             return "ok";
         }
 
-        @PostMapping("/api/publico")
+        @PostMapping({"/api/publico", "/api/questoes/1/respostas"})
         public String publicoPost() {
             return "ok";
         }

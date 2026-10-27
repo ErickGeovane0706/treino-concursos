@@ -72,6 +72,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problema;
     }
 
+    /** Limite de envios por IP em memoria excedido (RF16 RN3, RF17 RN4) -> 429 Too Many Requests. */
+    @ExceptionHandler(LimiteRequisicoesException.class)
+    public ProblemDetail tratarLimiteRequisicoes(LimiteRequisicoesException ex) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+        problema.setTitle("Limite de requisições excedido");
+        return problema;
+    }
+
     /**
      * Falha no @Valid de um DTO -> 400 Bad Request com mensagem fixa.
      *

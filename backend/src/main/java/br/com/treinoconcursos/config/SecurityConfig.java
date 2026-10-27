@@ -64,7 +64,12 @@ public class SecurityConfig {
                                 .includeSubDomains(true)
                                 .maxAgeInSeconds(31536000)
                                 .requestMatcher(AnyRequestMatcher.INSTANCE)))
-                .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository).csrfTokenRequestHandler(new CsrfSpaHandler()))
+                // doc/api.md secao 9: os dois POST publicos (respostas e reportes) sao isentos
+                // de CSRF, pois nao usam sessao, e tem limite por IP em memoria.
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/questoes/*/respostas", "/api/questoes/*/reportes")
+                        .csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(new CsrfSpaHandler()))
                 .securityContext(contexto -> contexto.securityContextRepository(securityContextRepository))
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")

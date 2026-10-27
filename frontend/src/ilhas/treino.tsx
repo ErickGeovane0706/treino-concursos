@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   armazenamentoDisponivel,
   buscarProximaNaoResolvida,
+  foiResolvida,
   lerOcultarResolvidas,
   registrarResposta,
   registrarUltimaVista,
@@ -24,6 +25,15 @@ export interface DadosTreino {
   alternativas: AlternativaTreino[];
   comentarioHtml: string;
 }
+
+export interface EstatisticasQuestao {
+  disponivel: boolean;
+  totalRespostas: number;
+  percentualAcertos: number;
+  alternativas: Record<string, number>;
+}
+
+const MINIMO_RESPOSTAS_ESTATISTICAS = 30;
 
 /**
  * Le os dados que o Thymeleaf ja renderizou no HTML (ja sanitizados pelo
@@ -60,14 +70,59 @@ function extrairIdDaUrlQuestao(url: string | null): number | null {
   return match ? Number(match[1]) : null;
 }
 
+function extrairEstatisticasValidas(json: unknown): EstatisticasQuestao | null {
+  if (typeof json !== 'object' || json === null) return null;
+  const obj = json as Record<string, unknown>;
+  if (
+    obj.disponivel !== true ||
+    typeof obj.totalRespostas !== 'number' ||
+    obj.totalRespostas < MINIMO_RESPOSTAS_ESTATISTICAS ||
+    typeof obj.percentualAcertos !== 'number' ||
+    !Array.isArray(obj.alternativas)
+  ) {
+    return null;
+  }
+
+  const alternativas: Record<string, number> = {};
+  for (const item of obj.alternativas) {
+    if (typeof item === 'object' && item !== null) {
+      const alt = item as Record<string, unknown>;
+      if (typeof alt.letra === 'string' && typeof alt.percentual === 'number') {
+        alternativas[alt.letra] = alt.percentual;
+      }
+    }
+  }
+
+  return {
+    disponivel: true,
+    totalRespostas: obj.totalRespostas,
+    percentualAcertos: obj.percentualAcertos,
+    alternativas,
+  };
+}
+
 export function IlhaTreino({ dados }: { dados: DadosTreino }) {
   const [escolha, setEscolha] = useState<string | null>(null);
   const [proximaUrl, setProximaUrl] = useState<string | null>(dados.proximaUrl);
+  const [estatisticas, setEstatisticas] = useState<EstatisticasQuestao | null>(null);
   const proximaRef = useRef<HTMLAnchorElement>(null);
+  const respondidaRef = useRef(false);
+  const jaEnviouRespostaRef = useRef(false);
+  const montadoRef = useRef(true);
   const semArmazenamento = useMemo(() => !armazenamentoDisponivel(), []);
 
   useEffect(() => {
+    montadoRef.current = true;
+    return () => {
+      montadoRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     setProximaUrl(dados.proximaUrl);
+    setEstatisticas(null);
+    respondidaRef.current = false;
+    jaEnviouRespostaRef.current = false;
     registrarUltimaVista(dados.id, dados.filtro);
   }, [dados.id, dados.filtro, dados.proximaUrl]);
 
@@ -105,16 +160,59 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
     };
   }, [dados.id, dados.filtro, dados.proximaUrl]);
 
+  const sincronizarEstatisticas = useCallback(async (idQuestao: number, letra: string, enviarPost: boolean) => {
+    if (typeof globalThis.fetch !== 'function') return;
+
+    if (enviarPost) {
+      try {
+        await globalThis.fetch(`/api/questoes/${idQuestao}/respostas`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ letra }),
+        });
+      } catch {
+        // Falha de rede ou bloqueio: a correcao local continua funcionando normalmente
+      }
+    }
+
+    try {
+      const resposta = await globalThis.fetch(`/api/questoes/${idQuestao}/estatisticas`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!resposta.ok) return;
+      const json: unknown = await resposta.json();
+      const lidas = extrairEstatisticasValidas(json);
+      if (lidas && montadoRef.current) {
+        setEstatisticas(lidas);
+      }
+    } catch {
+      // Sem estatisticas disponiveis no momento
+    }
+  }, []);
+
   const responder = useCallback(
     (letra: string) => {
-      setEscolha((atual) => {
-        if (atual !== null) return atual;
-        registrarResposta(dados.id, letra, letra === dados.correta, dados.filtro);
-        return letra;
-      });
+      if (respondidaRef.current) return;
+      respondidaRef.current = true;
+
+      // RF17 RN2: so a primeira resposta da questao neste navegador e enviada ao servidor
+      const jaResolvidaAntes = foiResolvida(dados.id) || jaEnviouRespostaRef.current;
+      registrarResposta(dados.id, letra, letra === dados.correta, dados.filtro);
+      setEscolha(letra);
+
+      const deveEnviarPost = !jaResolvidaAntes;
+      if (deveEnviarPost) {
+        jaEnviouRespostaRef.current = true;
+      }
+      void sincronizarEstatisticas(dados.id, letra, deveEnviarPost);
     },
-    [dados],
+    [dados, sincronizarEstatisticas],
   );
+
+  const refazer = useCallback(() => {
+    respondidaRef.current = false;
+    setEscolha(null);
+  }, []);
 
   useEffect(() => {
     if (escolha !== null) {
@@ -161,20 +259,29 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
   return (
     <>
       <ul className="opts">
-        {dados.alternativas.map((alt) => (
-          <li key={alt.letra}>
-            <button
-              type="button"
-              className={classeAlternativa(alt.letra)}
-              disabled={respondida}
-              data-letra={alt.letra}
-              onClick={() => responder(alt.letra)}
-            >
-              <span className="l">{alt.rotulo}</span>
-              <span className="opt-texto" dangerouslySetInnerHTML={{ __html: alt.textoHtml }} />
-            </button>
-          </li>
-        ))}
+        {dados.alternativas.map((alt) => {
+          const percentualAlternativa =
+            respondida && estatisticas?.disponivel ? estatisticas.alternativas[alt.letra] : undefined;
+          return (
+            <li key={alt.letra}>
+              <button
+                type="button"
+                className={classeAlternativa(alt.letra)}
+                disabled={respondida}
+                data-letra={alt.letra}
+                onClick={() => responder(alt.letra)}
+              >
+                <span className="l">{alt.rotulo}</span>
+                <span className="opt-texto" dangerouslySetInnerHTML={{ __html: alt.textoHtml }} />
+                {percentualAlternativa !== undefined && (
+                  <span className="opt-percentual" data-estatistica-alternativa={alt.letra}>
+                    {percentualAlternativa}%
+                  </span>
+                )}
+              </button>
+            </li>
+          );
+        })}
       </ul>
 
       {semArmazenamento && (
@@ -186,7 +293,14 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
       {respondida && (
         <>
           <div className={`fb ${acertou ? 'ok' : 'bad'}`} role="status">
-            <strong>{acertou ? 'Você acertou' : `Você errou. A correta é a ${dados.rotuloCorreta}`}</strong>
+            <div className="fb-topo">
+              <strong>{acertou ? 'Você acertou' : `Você errou. A correta é a ${dados.rotuloCorreta}`}</strong>
+              {estatisticas?.disponivel && (
+                <span className="estatistica-acertos" data-estatistica-acertos>
+                  {estatisticas.percentualAcertos}% acertaram
+                </span>
+              )}
+            </div>
             <div className="comentario texto" dangerouslySetInnerHTML={{ __html: dados.comentarioHtml }} />
           </div>
 
@@ -205,7 +319,7 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
             <button
               type="button"
               className="btn ghost btn-bloco"
-              onClick={() => setEscolha(null)}
+              onClick={refazer}
               data-refazer
             >
               Refazer

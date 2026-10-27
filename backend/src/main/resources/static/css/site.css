@@ -419,12 +419,26 @@ h1 {
   font-size: 15px;
 }
 
+.opt-texto {
+  flex: 1;
+  min-width: 0;
+}
+
 .opt-texto p:first-child {
   margin-top: 0;
 }
 
 .opt-texto p:last-child {
   margin-bottom: 0;
+}
+
+.opt-percentual {
+  flex: 0 0 auto;
+  align-self: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .opt:disabled {
@@ -485,6 +499,25 @@ h1 {
   display: block;
   font-size: 19px;
   margin-bottom: 6px;
+}
+
+.fb-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin-bottom: 6px;
+}
+
+.fb-topo strong {
+  margin-bottom: 0;
+}
+
+.estatistica-acertos {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
 }
 
 .fb.ok strong {

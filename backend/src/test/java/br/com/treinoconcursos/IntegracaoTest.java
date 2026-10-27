@@ -3,6 +3,7 @@ package br.com.treinoconcursos;
 import br.com.treinoconcursos.model.Perfil;
 import br.com.treinoconcursos.model.Usuario;
 import br.com.treinoconcursos.repository.UsuarioRepository;
+import br.com.treinoconcursos.service.LimitadorPorIpService;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -56,6 +57,9 @@ public abstract class IntegracaoTest {
     protected RelogioAjustavel relogio;
 
     @Autowired
+    protected LimitadorPorIpService limitadorPorIpService;
+
+    @Autowired
     protected JdbcTemplate jdbc;
 
     @BeforeEach
@@ -63,6 +67,7 @@ public abstract class IntegracaoTest {
         jdbc.execute("TRUNCATE alternativas, questoes, provas, orgaos, bancas, assuntos, materias, usuarios "
                 + "RESTART IDENTITY CASCADE");
         relogio.reiniciar();
+        limitadorPorIpService.limpar();
     }
 
     protected Usuario criarUsuario(String email, Perfil perfil) {

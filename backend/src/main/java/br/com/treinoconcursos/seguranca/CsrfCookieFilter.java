@@ -24,6 +24,9 @@ public class CsrfCookieFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String caminho = request.getRequestURI().substring(request.getContextPath().length());
+        if (caminho.startsWith("/api/questoes/")) {
+            return true;
+        }
         return !(caminho.startsWith("/api/") || caminho.startsWith("/admin"));
     }
 

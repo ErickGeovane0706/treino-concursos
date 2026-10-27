@@ -205,5 +205,85 @@ describe('Ilha de treino da questão', () => {
       setItemSpy.mockRestore();
     }
   });
+
+  it('envia POST /api/questoes/{id}/respostas só na primeira resposta do navegador e exibe "62% acertaram" e % por alternativa com 30+ respostas (RF17 RN1–RN3)', async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/respostas')) {
+        return new Response(null, { status: 202 });
+      }
+      if (url.endsWith('/estatisticas')) {
+        return new Response(
+          JSON.stringify({
+            disponivel: true,
+            totalRespostas: 100,
+            percentualAcertos: 62,
+            alternativas: [
+              { letra: 'A', percentual: 20 },
+              { letra: 'B', percentual: 62 },
+              { letra: 'C', percentual: 18 },
+            ],
+          }),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    });
+
+    render(<IlhaTreino dados={criarDadosPadrao()} />);
+
+    // Primeira resposta neste navegador -> envia POST e busca estatisticas
+    await user.click(screen.getAllByRole('button')[1]); // B
+
+    expect(await screen.findByText('62% acertaram')).toBeInTheDocument();
+    expect(document.querySelector('[data-estatistica-alternativa="A"]')).toHaveTextContent('20%');
+    expect(document.querySelector('[data-estatistica-alternativa="B"]')).toHaveTextContent('62%');
+    expect(document.querySelector('[data-estatistica-alternativa="C"]')).toHaveTextContent('18%');
+
+    const chamadasPostAntes = fetchSpy.mock.calls.filter(([u]) => String(u).endsWith('/respostas'));
+    expect(chamadasPostAntes).toHaveLength(1);
+    expect(chamadasPostAntes[0][0]).toBe('/api/questoes/42/respostas');
+    expect(chamadasPostAntes[0][1]).toMatchObject({
+      method: 'POST',
+      body: JSON.stringify({ letra: 'B' }),
+    });
+
+    // Clicar em "Refazer" e responder de novo nao envia novo POST (RF17 RN2)
+    await user.click(screen.getByRole('button', { name: 'Refazer' }));
+    expect(screen.queryByText('62% acertaram')).toBeNull();
+
+    await user.click(screen.getAllByRole('button')[0]); // A
+    expect(await screen.findByText('62% acertaram')).toBeInTheDocument();
+
+    const chamadasPostDepois = fetchSpy.mock.calls.filter(([u]) => String(u).endsWith('/respostas'));
+    expect(chamadasPostDepois).toHaveLength(1);
+  });
+
+  it('não envia POST /api/questoes/{id}/respostas quando a questão já constava como resolvida no navegador (RF17 RN2)', async () => {
+    const user = userEvent.setup();
+    registrarResposta(42, 'A', false, 'direito-constitucional');
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          disponivel: false,
+          totalRespostas: 12,
+          percentualAcertos: null,
+          alternativas: [],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    render(<IlhaTreino dados={criarDadosPadrao()} />);
+    await user.click(screen.getAllByRole('button')[1]); // B
+
+    const chamadasPost = fetchSpy.mock.calls.filter(([u]) => String(u).endsWith('/respostas'));
+    expect(chamadasPost).toHaveLength(0);
+    // Com menos de 30 respostas, nao exibe percentual (RF17 RN3)
+    expect(document.querySelector('[data-estatistica-acertos]')).toBeNull();
+    expect(document.querySelector('[data-estatistica-alternativa]')).toBeNull();
+  });
 });
 

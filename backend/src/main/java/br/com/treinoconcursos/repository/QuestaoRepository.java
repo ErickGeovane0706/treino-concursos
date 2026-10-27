@@ -213,4 +213,23 @@ public interface QuestaoRepository extends JpaRepository<Questao, Integer> {
     @Modifying(flushAutomatically = true)
     @Query(value = "UPDATE alternativas SET total_marcacoes = 0 WHERE id_questao = :id", nativeQuery = true)
     void zerarMarcacoes(@Param("id") Integer idQuestao);
+
+    @Query("select q.status from Questao q where q.id = :id")
+    Optional<StatusQuestao> buscarStatusPorId(@Param("id") Integer id);
+
+    @EntityGraph(attributePaths = "alternativas")
+    Optional<Questao> findComAlternativasById(Integer id);
+
+    /**
+     * RF17 RN1: incremento atomico dos contadores de respostas e acertos.
+     * Nunca ler, somar e salvar pela entidade.
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = """
+            UPDATE questoes
+            SET total_respostas = total_respostas + 1,
+                total_acertos   = total_acertos + CASE WHEN :correta THEN 1 ELSE 0 END
+            WHERE id_questao = :id AND status = 'PUBLICADA'
+            """, nativeQuery = true)
+    int incrementarRespostas(@Param("id") Integer idQuestao, @Param("correta") boolean correta);
 }

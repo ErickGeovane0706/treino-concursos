@@ -27,7 +27,7 @@
            ? 'bloco-anuncio bloco-anuncio-lateral'
            : 'bloco-anuncio bloco-anuncio-questao espaco-anuncio-questao'}"
          th:attr="data-bloco-anuncio=${posicao},
-                  data-espaco-anuncio=${posicao == 'questao' ? '' : null},
+                  data-espaco-anuncio=${posicao == 'questao' ? 'true' : null},
                   data-ads-enabled=${#site.adsEnabled},
                   data-ad-client=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
                   data-ad-slot=${#site.adsEnabled and !#strings.isEmpty(slot) ? slot : null},

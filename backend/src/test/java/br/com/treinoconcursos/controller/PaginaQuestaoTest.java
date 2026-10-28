@@ -193,6 +193,18 @@ class PaginaQuestaoTest extends IntegracaoTest {
                 .andExpect(header().string(
                         HttpHeaders.LOCATION,
                         "/questao/" + q.getId() + "/enunciado-de-sintaxe?de=lingua-portuguesa/sintaxe"));
+
+        mockMvc.perform(get("/questao/" + q.getId()).param("de", "caderno"))
+                .andExpect(status().isMovedPermanently())
+                .andExpect(header().string(
+                        HttpHeaders.LOCATION,
+                        "/questao/" + q.getId() + "/enunciado-de-sintaxe?de=caderno"));
+
+        mockMvc.perform(get("/questao/" + q.getId() + "/enunciado-de-sintaxe").param("de", "caderno"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("data-filtro=\"caderno\"")))
+                .andExpect(content().string(containsString("data-listagem-url=\"/caderno-de-erros\"")))
+                .andExpect(content().string(containsString("href=\"/caderno-de-erros\"")));
     }
 
     @Test

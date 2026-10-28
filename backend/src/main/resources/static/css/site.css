@@ -776,11 +776,13 @@ h1 {
   border: 1.5px solid var(--line);
   background: var(--surface);
   color: var(--ink);
+  font-family: inherit;
   font-weight: 600;
   font-size: 15px;
   padding: 8px 16px;
   border-radius: 999px;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .chip:hover {
@@ -788,6 +790,7 @@ h1 {
 }
 
 .chip[aria-current='page'],
+.chip[aria-pressed='true'],
 .chip[data-ativo='true'] {
   background: var(--brand);
   border-color: var(--brand);
@@ -1008,6 +1011,23 @@ h1 {
   border-radius: 12px;
   background: var(--bg);
   border: 1px solid var(--line);
+}
+
+.painel-caderno-erros {
+  margin-top: 20px;
+}
+
+.resumo-caderno {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.aviso-caderno-removida {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ok);
 }
 
 /* ---------- paginas de erro (sem anuncio) ---------- */

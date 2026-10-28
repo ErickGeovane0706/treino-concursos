@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CHAVE_PROGRESSO,
   definirOcultarResolvidas,
+  estaNoCadernoDeErros,
   lerProgresso,
   registrarResposta,
 } from '../progresso/progresso';
@@ -334,6 +335,74 @@ describe('Ilha de treino da questão', () => {
     await user.click(screen.getByRole('button', { name: 'Enviar reporte' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Muitas requisições deste endereço');
+  });
+
+  it('remove a questão do caderno de erros ao acertar na revisão e aponta "Próxima questão" para a seguinte do caderno (/questao/{id}/{slug}?de=caderno) (RF11 RN1–RN2, US04)', async () => {
+    const user = userEvent.setup();
+    // Visitante errou as questoes 42 e 50 anteriormente
+    registrarResposta(42, 'A', false, 'direito-constitucional');
+    registrarResposta(50, 'C', false, 'portugues');
+    expect(estaNoCadernoDeErros(42)).toBe(true);
+    expect(estaNoCadernoDeErros(50)).toBe(true);
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.startsWith('/api/questoes/resumos')) {
+        return new Response(
+          JSON.stringify([
+            {
+              id: 42,
+              slug: 'questao-42',
+              slugMateria: 'direito-constitucional',
+              nomeMateria: 'Direito Constitucional',
+              nomeAssunto: null,
+              fonte: 'Questão autoral',
+              resumoEnunciado: 'Enunciado 42',
+              anulada: false,
+              desatualizada: false,
+            },
+            {
+              id: 50,
+              slug: 'concordancia-verbal',
+              slugMateria: 'portugues',
+              nomeMateria: 'Português',
+              nomeAssunto: 'Sintaxe',
+              fonte: 'Questão autoral',
+              resumoEnunciado: 'Enunciado 50',
+              anulada: false,
+              desatualizada: false,
+            },
+          ]),
+          { status: 200 },
+        );
+      }
+      return new Response(JSON.stringify({ disponivel: false, totalRespostas: 1, percentualAcertos: null, alternativas: [] }), {
+        status: 200,
+      });
+    });
+
+    render(
+      <IlhaTreino
+        dados={criarDadosPadrao({
+          id: 42,
+          filtro: 'caderno',
+          listagemUrl: '/caderno-de-erros',
+          proximaUrl: null,
+        })}
+      />,
+    );
+
+    // Acerta a questao #42 ao refazer pelo caderno
+    await user.click(screen.getAllByRole('button')[1]); // B (correta)
+
+    expect(estaNoCadernoDeErros(42)).toBe(false);
+    expect(estaNoCadernoDeErros(50)).toBe(true);
+    expect(document.querySelector('[data-removida-caderno]')).toHaveTextContent(
+      'Questão removida do caderno de erros.',
+    );
+
+    const linkProxima = await screen.findByRole('link', { name: 'Próxima questão' });
+    expect(linkProxima).toHaveAttribute('href', '/questao/50/concordancia-verbal?de=caderno');
   });
 });
 

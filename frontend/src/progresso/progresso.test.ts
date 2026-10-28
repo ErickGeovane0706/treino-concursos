@@ -1,26 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  CHAVE_MATERIA_CADERNO,
   CHAVE_PROGRESSO,
   LIMITE_QUESTOES,
   armazenamentoDisponivel,
   buscarProximaNaoResolvida,
+  buscarProximaQuestaoCaderno,
+  buscarQuestoesCadernoDeErros,
   calcularResumoProgresso,
   consultarResposta,
+  contarCadernoDeErros,
+  definirMateriaCaderno,
   definirOcultarResolvidas,
+  ehFiltroCaderno,
+  escolherProximaDoCaderno,
   escolherProximaNaoResolvida,
+  estaNoCadernoDeErros,
+  extrairMateriaFiltroCaderno,
+  filtrarCadernoPorMateria,
   foiResolvida,
+  lerMateriaCaderno,
   lerOcultarResolvidas,
   lerProgresso,
   limparProgresso,
   limparUltimaVista,
+  listarIdsCadernoDeErros,
+  listarMateriasDoCaderno,
   normalizarChaveFiltro,
   obterUltimaVista,
   parametrosFiltroIds,
   registrarResposta,
   registrarUltimaVista,
   urlListagemDoFiltro,
+  urlQuestaoCaderno,
   urlQuestaoPorId,
   type DadosProgresso,
+  type QuestaoCaderno,
   type RegistroResposta,
 } from './progresso';
 
@@ -335,5 +350,161 @@ describe('Módulo de progresso local (RF10 RN1-RN7, US03, RNF06)', () => {
     const fetchFalha = vi.fn(async () => new Response(null, { status: 500 })) as unknown as typeof fetch;
     const r1 = await buscarProximaNaoResolvida('portugues', { fetchFn: fetchFalha });
     expect(r1).toEqual({ status: 'vazio', filtro: 'portugues' });
+  });
+
+  describe('Caderno de erros (RF11 RN1–RN2, US04)', () => {
+    const questoesExemplo: QuestaoCaderno[] = [
+      {
+        id: 25,
+        slug: 'principios-administrativos',
+        slugMateria: 'direito-administrativo',
+        nomeMateria: 'Direito Administrativo',
+        nomeAssunto: 'Princípios',
+        fonte: 'FGV · TJ · 2025 · Técnico',
+        resumoEnunciado: 'Não é princípio expresso no caput do art. 37...',
+        anulada: false,
+        desatualizada: false,
+      },
+      {
+        id: 10,
+        slug: 'concordancia-verbal',
+        slugMateria: 'portugues',
+        nomeMateria: 'Português',
+        nomeAssunto: 'Concordância verbal',
+        fonte: 'CEBRASPE · PRF · 2024 · Policial',
+        resumoEnunciado: 'Assinale a frase correta quanto à concordância verbal.',
+        anulada: false,
+        desatualizada: false,
+      },
+      {
+        id: 18,
+        slug: 'uso-da-crase',
+        slugMateria: 'portugues',
+        nomeMateria: 'Português',
+        nomeAssunto: 'Crase',
+        fonte: 'Questão autoral',
+        resumoEnunciado: 'Complete a frase com crase.',
+        anulada: false,
+        desatualizada: false,
+      },
+    ];
+
+    it('adiciona questão ao caderno sempre que o visitante erra e a remove quando acerta ao refazer (RF11 RN1)', () => {
+      expect(contarCadernoDeErros()).toBe(0);
+      expect(listarIdsCadernoDeErros()).toEqual([]);
+      expect(estaNoCadernoDeErros(10)).toBe(false);
+
+      // Erra a #25 e a #10 e acerta a #15 -> entram apenas #10 e #25 em ordem crescente de id
+      registrarResposta(25, 'A', false, 'direito-administrativo');
+      registrarResposta(15, 'B', true, 'portugues');
+      registrarResposta(10, 'D', false, 'portugues');
+
+      expect(estaNoCadernoDeErros(10)).toBe(true);
+      expect(estaNoCadernoDeErros(25)).toBe(true);
+      expect(estaNoCadernoDeErros(15)).toBe(false);
+      expect(contarCadernoDeErros()).toBe(2);
+      expect(listarIdsCadernoDeErros()).toEqual([10, 25]);
+
+      // Refaz a #10 e erra novamente -> continua no caderno
+      registrarResposta(10, 'C', false, 'caderno');
+      expect(estaNoCadernoDeErros(10)).toBe(true);
+      expect(listarIdsCadernoDeErros()).toEqual([10, 25]);
+
+      // Refaz a #10 e acerta -> sai do caderno (RF11 RN1, US04)
+      registrarResposta(10, 'B', true, 'caderno');
+      expect(estaNoCadernoDeErros(10)).toBe(false);
+      expect(estaNoCadernoDeErros(25)).toBe(true);
+      expect(contarCadernoDeErros()).toBe(1);
+      expect(listarIdsCadernoDeErros()).toEqual([25]);
+
+      // Se errar a #15 que antes estava certa -> entra no caderno (RF11 RN1)
+      registrarResposta(15, 'A', false, 'portugues');
+      expect(estaNoCadernoDeErros(15)).toBe(true);
+      expect(listarIdsCadernoDeErros()).toEqual([15, 25]);
+    });
+
+    it('filtra o caderno por matéria, lista matérias com contagens e escolhe a próxima em sequência (RF11 RN2)', () => {
+      const materias = listarMateriasDoCaderno(questoesExemplo);
+      expect(materias).toEqual([
+        { slug: 'direito-administrativo', nome: 'Direito Administrativo', quantidade: 1 },
+        { slug: 'portugues', nome: 'Português', quantidade: 2 },
+      ]);
+
+      // Sem filtro ("todas"): ordena por id crescente [10, 18, 25]
+      expect(filtrarCadernoPorMateria(questoesExemplo, null).map((q) => q.id)).toEqual([10, 18, 25]);
+      expect(filtrarCadernoPorMateria(questoesExemplo, 'todas').map((q) => q.id)).toEqual([10, 18, 25]);
+
+      // Filtrado por portugues: apenas [10, 18]
+      expect(filtrarCadernoPorMateria(questoesExemplo, 'portugues').map((q) => q.id)).toEqual([10, 18]);
+
+      // Percorrer em sequencia (sem filtro e com filtro de materia)
+      expect(escolherProximaDoCaderno(questoesExemplo, null, null)?.id).toBe(10);
+      expect(escolherProximaDoCaderno(questoesExemplo, 10, null)?.id).toBe(18);
+      expect(escolherProximaDoCaderno(questoesExemplo, 18, null)?.id).toBe(25);
+      expect(escolherProximaDoCaderno(questoesExemplo, 25, null)).toBeNull();
+
+      expect(escolherProximaDoCaderno(questoesExemplo, 10, 'portugues')?.id).toBe(18);
+      expect(escolherProximaDoCaderno(questoesExemplo, 18, 'portugues')).toBeNull();
+    });
+
+    it('monta URLs reais (/questao/{id}/{slug}?de=caderno) e salva/limpa filtro de matéria do caderno', () => {
+      expect(urlQuestaoCaderno(10, 'concordancia-verbal')).toBe('/questao/10/concordancia-verbal?de=caderno');
+      expect(urlQuestaoCaderno(10, '')).toBe('/questao/10?de=caderno');
+
+      expect(ehFiltroCaderno('caderno')).toBe(true);
+      expect(ehFiltroCaderno('/caderno/portugues/')).toBe(true);
+      expect(ehFiltroCaderno('portugues/crase')).toBe(false);
+      expect(ehFiltroCaderno(null)).toBe(false);
+
+      expect(extrairMateriaFiltroCaderno('caderno')).toBeNull();
+      expect(extrairMateriaFiltroCaderno('caderno/portugues')).toBe('portugues');
+      expect(extrairMateriaFiltroCaderno('portugues')).toBeNull();
+
+      expect(lerMateriaCaderno()).toBeNull();
+      definirMateriaCaderno('portugues');
+      expect(lerMateriaCaderno()).toBe('portugues');
+      expect(localStorage.getItem(CHAVE_MATERIA_CADERNO)).toBe('portugues');
+
+      definirMateriaCaderno('todas');
+      expect(lerMateriaCaderno()).toBeNull();
+
+      definirMateriaCaderno('direito-administrativo');
+      limparProgresso();
+      expect(lerMateriaCaderno()).toBeNull();
+    });
+
+    it('busca dados mínimos das questões erradas em /api/questoes/resumos e calcula a próxima questão do caderno', async () => {
+      registrarResposta(25, 'A', false, 'direito-administrativo');
+      registrarResposta(10, 'D', false, 'portugues');
+      registrarResposta(18, 'C', false, 'portugues');
+      registrarResposta(12, 'B', true, 'portugues'); // acertou -> nao vai para a requisicao
+
+      const chamadas: string[] = [];
+      const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        chamadas.push(url);
+        return new Response(JSON.stringify(questoesExemplo), { status: 200 });
+      }) as unknown as typeof fetch;
+
+      const carregadas = await buscarQuestoesCadernoDeErros({ fetchFn: fetchMock });
+      expect(chamadas).toEqual(['/api/questoes/resumos?ids=10,18,25']);
+      expect(carregadas.map((q) => q.id)).toEqual([10, 18, 25]);
+
+      // Proxima do caderno depois da #18 sem filtro de materia -> #25
+      const proximaGeral = await buscarProximaQuestaoCaderno(18, { fetchFn: fetchMock });
+      expect(proximaGeral).toEqual({
+        questao: questoesExemplo[0],
+        url: '/questao/25/principios-administrativos?de=caderno',
+      });
+
+      // Com filtro de materia "portugues" ativo, apos a #18 nao ha mais questoes de portugues no caderno
+      definirMateriaCaderno('portugues');
+      const proximaPortugues = await buscarProximaQuestaoCaderno(18, { fetchFn: fetchMock });
+      expect(proximaPortugues).toBeNull();
+
+      // Mas apos a #10 em "portugues", a proxima e a #18
+      const proximaPortuguesDe10 = await buscarProximaQuestaoCaderno(10, { fetchFn: fetchMock });
+      expect(proximaPortuguesDe10?.url).toBe('/questao/18/uso-da-crase?de=caderno');
+    });
   });
 });

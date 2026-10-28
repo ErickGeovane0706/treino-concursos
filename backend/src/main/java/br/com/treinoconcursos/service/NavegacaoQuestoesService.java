@@ -3,6 +3,7 @@ package br.com.treinoconcursos.service;
 import br.com.treinoconcursos.dto.ListagemQuestoesView;
 import br.com.treinoconcursos.dto.ListagemQuestoesView.ChipFiltroView;
 import br.com.treinoconcursos.dto.ListagemQuestoesView.ItemQuestaoView;
+import br.com.treinoconcursos.dto.QuestaoCadernoResponse;
 import br.com.treinoconcursos.dto.QuestoesIdsResponse;
 import br.com.treinoconcursos.model.Assunto;
 import br.com.treinoconcursos.model.Materia;
@@ -38,6 +39,7 @@ public class NavegacaoQuestoesService {
     public static final int TAMANHO_PAGINA_HTML = 20;
     public static final int LIMITE_IDS_PADRAO = 500;
     public static final int LIMITE_IDS_MAXIMO = 1000;
+    public static final int LIMITE_RESUMOS_CADERNO = 200;
     static final int LIMITE_RESUMO_ENUNCIADO = 180;
 
     private static final Pattern FILTRO_VALIDO =
@@ -169,6 +171,29 @@ public class NavegacaoQuestoesService {
     }
 
     /**
+     * {@code GET /api/questoes/resumos?ids=...}: devolve os dados minimos das questoes
+     * publicadas informadas, em ordem crescente de id, para montar o caderno de erros no navegador
+     * (RF11 RN1-RN2, US04).
+     */
+    @Transactional(readOnly = true)
+    public List<QuestaoCadernoResponse> buscarResumosPorIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        List<Integer> idsValidos = ids.stream()
+                .filter(id -> id != null && id > 0)
+                .distinct()
+                .limit(LIMITE_RESUMOS_CADERNO)
+                .toList();
+        if (idsValidos.isEmpty()) {
+            return List.of();
+        }
+        return questaoRepository.listarPublicadasPorIds(idsValidos).stream()
+                .map(this::paraCadernoResponse)
+                .toList();
+    }
+
+    /**
      * Descobre a questao anterior e a proxima publicadas em ordem crescente de id,
      * respeitando o filtro {@code ?de=} (materia ou materia/assunto com subassuntos).
      */
@@ -267,6 +292,23 @@ public class NavegacaoQuestoesService {
                 q.getId(),
                 q.getSlug(),
                 QuestaoPublicaService.urlCanonica(q.getId(), q.getSlug(), filtro),
+                q.getMateria().getNome(),
+                q.getAssunto() != null ? q.getAssunto().getNome() : null,
+                QuestaoPublicaService.fonteDe(q),
+                resumo,
+                q.isAnulada(),
+                q.isDesatualizada());
+    }
+
+    private QuestaoCadernoResponse paraCadernoResponse(Questao q) {
+        String enunciadoHtml = markdownService.paraHtml(q.getEnunciado());
+        String resumo = QuestaoPublicaService.cortar(
+                QuestaoPublicaService.textoPlano(enunciadoHtml),
+                LIMITE_RESUMO_ENUNCIADO);
+        return new QuestaoCadernoResponse(
+                q.getId(),
+                q.getSlug(),
+                q.getMateria().getSlug(),
                 q.getMateria().getNome(),
                 q.getAssunto() != null ? q.getAssunto().getNome() : null,
                 QuestaoPublicaService.fonteDe(q),

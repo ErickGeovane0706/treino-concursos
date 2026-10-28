@@ -53,5 +53,11 @@ public class InstitucionalController {
     public String meuProgresso() {
         return "meu-progresso";
     }
+
+    /** RF11 RN1-RN2, US04: pagina publica (noindex) do caderno de erros montado no navegador. */
+    @GetMapping("/caderno-de-erros")
+    public String cadernoDeErros() {
+        return "caderno-de-erros";
+    }
 }
 

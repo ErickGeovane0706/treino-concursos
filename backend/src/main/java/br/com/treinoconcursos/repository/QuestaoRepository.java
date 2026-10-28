@@ -154,6 +154,16 @@ public interface QuestaoRepository extends JpaRepository<Questao, Integer> {
     java.util.List<Questao> listarPublicadasPorAssuntosDepoisDe(@Param("idsAssunto") Collection<Integer> idsAssunto,
             @Param("depoisDe") Integer depoisDe, Pageable pageable);
 
+    /** RF11 RN1-RN2, US04: dados minimos das questoes publicadas para o caderno de erros em ordem crescente de id. */
+    @EntityGraph(attributePaths = {"materia", "assunto", "prova", "prova.banca", "prova.orgao"})
+    @Query("""
+            select q from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.id in :ids
+            order by q.id asc
+            """)
+    java.util.List<Questao> listarPublicadasPorIds(@Param("ids") Collection<Integer> ids);
+
     /** RF07 / RF10: apenas os ids publicados do filtro em ordem crescente (GET /api/questoes/ids). */
     @Query("""
             select q.id from Questao q

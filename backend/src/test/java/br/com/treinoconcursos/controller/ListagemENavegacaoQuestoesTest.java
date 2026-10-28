@@ -229,6 +229,36 @@ class ListagemENavegacaoQuestoesTest extends IntegracaoTest {
                 .andExpect(jsonPath("$.proximoCursor", nullValue()));
     }
 
+    @Test
+    void apiQuestoesResumosRetornaDadosMinimosDasPublicadasOrdenadosPorIdSemGabarito() throws Exception {
+        Questao q1 = novaQuestao(portugues, sintaxe, "Enunciado **um** de sintaxe", StatusQuestao.PUBLICADA);
+        Questao qRascunho = novaQuestao(portugues, sintaxe, "Rascunho oculto", StatusQuestao.RASCUNHO);
+        Questao q2 = novaQuestao(direito, null, "Enunciado dois de direito constitucional", StatusQuestao.PUBLICADA);
+        Questao qArquivada = novaQuestao(portugues, concordancia, "Arquivada oculta", StatusQuestao.ARQUIVADA);
+
+        // Passando ids fora de ordem + rascunho + arquivada -> devolve so as publicadas em ordem crescente de id
+        String idsParam = q2.getId() + "," + qRascunho.getId() + "," + q1.getId() + "," + qArquivada.getId();
+        mockMvc.perform(get("/api/questoes/resumos")
+                        .param("ids", idsParam)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].id", is(q1.getId())))
+                .andExpect(jsonPath("$[0].slug", is(q1.getSlug())))
+                .andExpect(jsonPath("$[0].slugMateria", is("portugues")))
+                .andExpect(jsonPath("$[0].nomeMateria", is("Português")))
+                .andExpect(jsonPath("$[0].nomeAssunto", is("Sintaxe")))
+                .andExpect(jsonPath("$[0].resumoEnunciado", is("Enunciado um de sintaxe")))
+                .andExpect(jsonPath("$[1].id", is(q2.getId())))
+                .andExpect(jsonPath("$[1].slugMateria", is("direito-constitucional")))
+                .andExpect(content().string(not(containsString("correta"))))
+                .andExpect(content().string(not(containsString("comentario"))));
+
+        mockMvc.perform(get("/api/questoes/resumos").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
     private Questao novaQuestao(Materia materia, Assunto assunto, String enunciado, StatusQuestao status) {
         Questao q = new Questao();
         q.setMateria(materia);

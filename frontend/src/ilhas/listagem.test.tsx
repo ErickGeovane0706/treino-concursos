@@ -3,12 +3,13 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  lerMateriaCaderno,
   lerOcultarResolvidas,
   lerProgresso,
   obterUltimaVista,
   registrarResposta,
 } from '../progresso/progresso';
-import { IlhaListagem, IlhaMeuProgresso, iniciarIlhaListagem } from './listagem';
+import { IlhaCadernoDeErros, IlhaListagem, IlhaMeuProgresso, iniciarIlhaListagem } from './listagem';
 
 describe('Ilha de listagem e página Meu progresso (RF10 RN1-RN6, US03, RNF06)', () => {
   beforeEach(() => {
@@ -177,5 +178,95 @@ describe('Ilha de listagem e página Meu progresso (RF10 RN1-RN6, US03, RNF06)',
       setItemSpy.mockRestore();
       erroConsole.mockRestore();
     }
+  });
+
+  it('exibe estado vazio em /caderno-de-erros quando não há questões erradas (RF11, US04)', () => {
+    registrarResposta(10, 'A', true, 'portugues');
+    render(<IlhaCadernoDeErros />);
+
+    expect(document.querySelector('[data-caderno-vazio]')).toHaveTextContent(
+      'Você não tem questões no caderno de erros no momento.',
+    );
+  });
+
+  it('busca os dados mínimos das questões erradas em /caderno-de-erros, permite filtrar por matéria e aponta para /questao/{id}/{slug}?de=caderno (RF11 RN1–RN2, US04)', async () => {
+    const user = userEvent.setup();
+    registrarResposta(10, 'A', false, 'portugues');
+    registrarResposta(15, 'B', true, 'portugues');
+    registrarResposta(22, 'C', false, 'direito-constitucional');
+    registrarResposta(30, 'D', false, 'portugues');
+
+    const fetchMock = vi.fn(async () =>
+      new Response(
+        JSON.stringify([
+          {
+            id: 10,
+            slug: 'concordancia-verbal',
+            slugMateria: 'portugues',
+            nomeMateria: 'Português',
+            nomeAssunto: 'Concordância verbal',
+            fonte: 'CEBRASPE · PRF · 2024 · Policial',
+            resumoEnunciado: 'Assinale a opção correta sobre concordância.',
+            anulada: false,
+            desatualizada: false,
+          },
+          {
+            id: 22,
+            slug: 'direitos-fundamentais',
+            slugMateria: 'direito-constitucional',
+            nomeMateria: 'Direito Constitucional',
+            nomeAssunto: 'Art. 5º',
+            fonte: 'Questão autoral',
+            resumoEnunciado: 'Sobre os direitos fundamentais na CF/88.',
+            anulada: false,
+            desatualizada: false,
+          },
+          {
+            id: 30,
+            slug: 'emprego-da-crase',
+            slugMateria: 'portugues',
+            nomeMateria: 'Português',
+            nomeAssunto: 'Crase',
+            fonte: 'FGV · TJ · 2025 · Técnico',
+            resumoEnunciado: 'Assinale a alternativa em que há crase.',
+            anulada: false,
+            desatualizada: false,
+          },
+        ]),
+        { status: 200 },
+      ),
+    ) as unknown as typeof fetch;
+
+    render(<IlhaCadernoDeErros fetchFn={fetchMock} />);
+
+    expect(await screen.findByText('Assinale a opção correta sobre concordância.')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith('/api/questoes/resumos?ids=10,22,30', expect.any(Object));
+
+    expect(document.querySelector('[data-resumo-caderno]')).toHaveTextContent('3 questões para revisar');
+    expect(document.querySelector('[data-iniciar-caderno]')).toHaveAttribute(
+      'href',
+      '/questao/10/concordancia-verbal?de=caderno',
+    );
+    expect(document.querySelector('[data-link-questao-caderno="22"]')).toHaveAttribute(
+      'href',
+      '/questao/22/direitos-fundamentais?de=caderno',
+    );
+
+    // Filtra por Direito Constitucional
+    await user.click(screen.getByRole('button', { name: 'Direito Constitucional (1)' }));
+
+    expect(lerMateriaCaderno()).toBe('direito-constitucional');
+    expect(document.querySelector('[data-resumo-caderno]')).toHaveTextContent('1 questão para revisar');
+    expect(document.querySelector('[data-iniciar-caderno]')).toHaveAttribute(
+      'href',
+      '/questao/22/direitos-fundamentais?de=caderno',
+    );
+    expect(screen.queryByText('Assinale a opção correta sobre concordância.')).toBeNull();
+    expect(screen.getByText('Sobre os direitos fundamentais na CF/88.')).toBeInTheDocument();
+
+    // Volta para Todas
+    await user.click(screen.getByRole('button', { name: 'Todas (3)' }));
+    expect(lerMateriaCaderno()).toBeNull();
+    expect(document.querySelector('[data-resumo-caderno]')).toHaveTextContent('3 questões para revisar');
   });
 });

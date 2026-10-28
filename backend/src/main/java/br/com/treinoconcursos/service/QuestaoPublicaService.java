@@ -77,12 +77,20 @@ public class QuestaoPublicaService {
 
         Materia materia = questao.getMateria();
         Assunto assunto = questao.getAssunto();
-        String listagemUrl = assunto != null
-                ? "/questoes/" + materia.getSlug() + "/" + assunto.getSlug()
-                : "/questoes/" + materia.getSlug();
-        String rotuloListagem = assunto != null
-                ? "Questões de " + assunto.getNome()
-                : "Questões de " + materia.getNome();
+        boolean origemCaderno = "caderno".equals(filtro) || (filtro != null && filtro.startsWith("caderno/"));
+        String listagemUrl;
+        String rotuloListagem;
+        if (origemCaderno) {
+            listagemUrl = "/caderno-de-erros";
+            rotuloListagem = "Caderno de erros";
+        } else {
+            listagemUrl = assunto != null
+                    ? "/questoes/" + materia.getSlug() + "/" + assunto.getSlug()
+                    : "/questoes/" + materia.getSlug();
+            rotuloListagem = assunto != null
+                    ? "Questões de " + assunto.getNome()
+                    : "Questões de " + materia.getNome();
+        }
 
         return new QuestaoPaginaView(
                 questao.getId(),

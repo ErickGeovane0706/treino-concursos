@@ -3,7 +3,9 @@
 // com o armazenamento bloqueado, o site funciona normalmente sem lancar erros.
 
 export const CHAVE_PROGRESSO = 'treino-concursos:progresso';
+export const CHAVE_MATERIA_CADERNO = 'treino-concursos:caderno-materia';
 export const LIMITE_QUESTOES = 20_000;
+export const LIMITE_RESUMOS_CADERNO = 200;
 const CHAVE_TESTE_STORAGE = 'treino-concursos:__teste_storage__';
 
 export interface RegistroResposta {
@@ -55,6 +57,34 @@ export interface OpcoesBuscarProxima {
   storage?: Storage | null;
   fetchFn?: typeof fetch;
   depoisDe?: number;
+}
+
+export interface QuestaoCaderno {
+  id: number;
+  slug: string;
+  slugMateria: string;
+  nomeMateria: string;
+  nomeAssunto: string | null;
+  fonte: string;
+  resumoEnunciado: string;
+  anulada: boolean;
+  desatualizada: boolean;
+}
+
+export interface MateriaCaderno {
+  slug: string;
+  nome: string;
+  quantidade: number;
+}
+
+export interface OpcoesCaderno {
+  storage?: Storage | null;
+  fetchFn?: typeof fetch;
+}
+
+export interface ProximaQuestaoCaderno {
+  questao: QuestaoCaderno;
+  url: string;
 }
 
 function vazio(): DadosProgresso {
@@ -343,9 +373,244 @@ export function limparProgresso(storage?: Storage | null): void {
   try {
     const alvo = obterStorage(storage);
     alvo?.removeItem(CHAVE_PROGRESSO);
+    alvo?.removeItem(CHAVE_MATERIA_CADERNO);
   } catch {
     // Ignorado quando localStorage nao esta disponivel
   }
+}
+
+/**
+ * Informa se uma questao esta atualmente no caderno de erros (RF11 RN1, US04):
+ * entra sempre que o visitante erra e sai quando acerta ao refazer.
+ */
+export function estaNoCadernoDeErros(idQuestao: number, fonte?: Storage | DadosProgresso | null): boolean {
+  const progresso: DadosProgresso = ehDadosProgresso(fonte) ? fonte : lerProgresso(fonte);
+  const registro = progresso.respostas[String(idQuestao)];
+  return Boolean(registro && registro.acertou === false);
+}
+
+/**
+ * Lista os ids das questoes presentes no caderno de erros em ordem crescente de id (RF11 RN1, RN2).
+ */
+export function listarIdsCadernoDeErros(fonte?: Storage | DadosProgresso | null): number[] {
+  const progresso: DadosProgresso = ehDadosProgresso(fonte) ? fonte : lerProgresso(fonte);
+  const ids: number[] = [];
+  for (const [chave, registro] of Object.entries(progresso.respostas)) {
+    if (registro.acertou === false) {
+      const id = Number(chave);
+      if (Number.isInteger(id) && id > 0) {
+        ids.push(id);
+      }
+    }
+  }
+  ids.sort((a, b) => a - b);
+  return ids;
+}
+
+/**
+ * Conta quantas questoes estao atualmente no caderno de erros (RF11 RN1).
+ */
+export function contarCadernoDeErros(fonte?: Storage | DadosProgresso | null): number {
+  return listarIdsCadernoDeErros(fonte).length;
+}
+
+/**
+ * Verifica se o filtro de navegacao corresponde ao caderno de erros (ex.: "caderno" ou "caderno/portugues").
+ */
+export function ehFiltroCaderno(filtro?: string | null): boolean {
+  const chave = normalizarChaveFiltro(filtro);
+  return chave === 'caderno' || chave.startsWith('caderno/');
+}
+
+/**
+ * Extrai o slug da materia se o filtro for do formato "caderno/{materia}", ou null caso contrario.
+ */
+export function extrairMateriaFiltroCaderno(filtro?: string | null): string | null {
+  const chave = normalizarChaveFiltro(filtro);
+  if (!chave.startsWith('caderno/')) return null;
+  const materia = chave.slice('caderno/'.length).trim().replace(/^\/+|\/+$/g, '');
+  return materia && materia !== 'todas' ? materia : null;
+}
+
+/**
+ * Le a materia selecionada para filtrar o caderno de erros neste navegador (RF11 RN2).
+ */
+export function lerMateriaCaderno(storage?: Storage | null): string | null {
+  try {
+    const alvo = obterStorage(storage);
+    const lido = alvo?.getItem(CHAVE_MATERIA_CADERNO)?.trim() ?? '';
+    return lido && lido !== 'todas' ? lido : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Salva ou limpa a materia selecionada para filtrar o caderno de erros neste navegador (RF11 RN2).
+ */
+export function definirMateriaCaderno(slugMateria: string | null, storage?: Storage | null): void {
+  try {
+    const alvo = obterStorage(storage);
+    if (!alvo) return;
+    const limpo = slugMateria?.trim().replace(/^\/+|\/+$/g, '') ?? '';
+    if (!limpo || limpo === 'todas') {
+      alvo.removeItem(CHAVE_MATERIA_CADERNO);
+    } else {
+      alvo.setItem(CHAVE_MATERIA_CADERNO, limpo);
+    }
+  } catch {
+    // Ignorado quando localStorage nao esta disponivel
+  }
+}
+
+/**
+ * Monta a URL real da questao para navegacao pelo caderno de erros (/questao/{id}/{slug}?de=caderno) (RF11, US04).
+ */
+export function urlQuestaoCaderno(idQuestao: number, slug?: string | null): string {
+  const slugLimpo = slug?.trim().replace(/^\/+|\/+$/g, '') ?? '';
+  const base = slugLimpo ? `/questao/${idQuestao}/${slugLimpo}` : `/questao/${idQuestao}`;
+  return `${base}?de=caderno`;
+}
+
+/**
+ * Filtra as questoes do caderno de erros por materia (ou retorna todas quando slugMateria for nulo/"todas"),
+ * mantendo a ordem crescente de id (RF11 RN2).
+ */
+export function filtrarCadernoPorMateria(
+  questoes: readonly QuestaoCaderno[],
+  slugMateria?: string | null,
+): QuestaoCaderno[] {
+  const materia = slugMateria?.trim() ?? '';
+  const filtradas =
+    !materia || materia === 'todas'
+      ? [...questoes]
+      : questoes.filter((q) => q.slugMateria === materia);
+  filtradas.sort((a, b) => a.id - b.id);
+  return filtradas;
+}
+
+/**
+ * Lista as materias presentes nas questoes do caderno de erros com suas quantidades,
+ * ordenadas pelo nome da materia (RF11 RN2).
+ */
+export function listarMateriasDoCaderno(questoes: readonly QuestaoCaderno[]): MateriaCaderno[] {
+  const mapa = new Map<string, MateriaCaderno>();
+  for (const q of questoes) {
+    if (!q.slugMateria || !q.nomeMateria) continue;
+    const existente = mapa.get(q.slugMateria);
+    if (existente) {
+      existente.quantidade++;
+    } else {
+      mapa.set(q.slugMateria, { slug: q.slugMateria, nome: q.nomeMateria, quantidade: 1 });
+    }
+  }
+  return [...mapa.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
+/**
+ * Escolhe a proxima questao do caderno de erros em sequencia (id crescente maior que idAtual),
+ * respeitando o filtro de materia quando ativo (RF11 RN2, US04).
+ */
+export function escolherProximaDoCaderno(
+  questoes: readonly QuestaoCaderno[],
+  idAtual: number | null = null,
+  slugMateria?: string | null,
+): QuestaoCaderno | null {
+  const filtradas = filtrarCadernoPorMateria(questoes, slugMateria);
+  const minimo = idAtual !== null && idAtual > 0 ? idAtual : 0;
+  for (const q of filtradas) {
+    if (q.id > minimo) {
+      return q;
+    }
+  }
+  return null;
+}
+
+function questaoCadernoValida(valor: unknown): valor is QuestaoCaderno {
+  if (typeof valor !== 'object' || valor === null) return false;
+  const q = valor as Record<string, unknown>;
+  return (
+    typeof q.id === 'number' &&
+    Number.isInteger(q.id) &&
+    q.id > 0 &&
+    typeof q.slug === 'string' &&
+    q.slug.length > 0 &&
+    typeof q.slugMateria === 'string' &&
+    q.slugMateria.length > 0 &&
+    typeof q.nomeMateria === 'string' &&
+    q.nomeMateria.length > 0 &&
+    (q.nomeAssunto === null || typeof q.nomeAssunto === 'string') &&
+    typeof q.fonte === 'string' &&
+    typeof q.resumoEnunciado === 'string' &&
+    typeof q.anulada === 'boolean' &&
+    typeof q.desatualizada === 'boolean'
+  );
+}
+
+/**
+ * Busca no backend (GET /api/questoes/resumos?ids=...) os dados minimos das questoes
+ * que estao no caderno de erros deste navegador, em ordem crescente de id (RF11 RN1-RN2, US04).
+ */
+export async function buscarQuestoesCadernoDeErros(
+  opcoes: OpcoesCaderno = {},
+): Promise<QuestaoCaderno[]> {
+  const ids = listarIdsCadernoDeErros(opcoes.storage);
+  if (ids.length === 0) return [];
+
+  const fetchFn = opcoes.fetchFn ?? globalThis.fetch?.bind(globalThis);
+  if (typeof fetchFn !== 'function') return [];
+
+  const conjuntoIds = new Set(ids);
+  const encontradas = new Map<number, QuestaoCaderno>();
+
+  try {
+    for (let inicio = 0; inicio < ids.length; inicio += LIMITE_RESUMOS_CADERNO) {
+      const lote = ids.slice(inicio, inicio + LIMITE_RESUMOS_CADERNO);
+      const url = `/api/questoes/resumos?ids=${lote.join(',')}`;
+      const resposta = await fetchFn(url, { headers: { Accept: 'application/json' } });
+      if (!resposta.ok) continue;
+      const json: unknown = await resposta.json();
+      if (!Array.isArray(json)) continue;
+      for (const item of json) {
+        if (questaoCadernoValida(item) && conjuntoIds.has(item.id)) {
+          encontradas.set(item.id, {
+            id: item.id,
+            slug: item.slug,
+            slugMateria: item.slugMateria,
+            nomeMateria: item.nomeMateria,
+            nomeAssunto: item.nomeAssunto,
+            fonte: item.fonte,
+            resumoEnunciado: item.resumoEnunciado,
+            anulada: item.anulada,
+            desatualizada: item.desatualizada,
+          });
+        }
+      }
+    }
+  } catch {
+    return [];
+  }
+
+  return [...encontradas.values()].sort((a, b) => a.id - b.id);
+}
+
+/**
+ * Busca a proxima questao do caderno de erros apos idAtual (respeitando o filtro de materia
+ * ativo no caderno) e devolve a questao e sua URL real (/questao/{id}/{slug}?de=caderno) (RF11 RN2, US04).
+ */
+export async function buscarProximaQuestaoCaderno(
+  idAtual: number,
+  opcoes: OpcoesCaderno & { materia?: string | null } = {},
+): Promise<ProximaQuestaoCaderno | null> {
+  const questoes = await buscarQuestoesCadernoDeErros(opcoes);
+  const materia =
+    opcoes.materia !== undefined ? opcoes.materia : lerMateriaCaderno(opcoes.storage);
+  const proxima = escolherProximaDoCaderno(questoes, idAtual, materia);
+  if (!proxima) return null;
+  return {
+    questao: proxima,
+    url: urlQuestaoCaderno(proxima.id, proxima.slug),
+  };
 }
 
 function idEstaResolvido(

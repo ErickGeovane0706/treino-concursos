@@ -117,5 +117,21 @@ class PaginasInstitucionaisTest extends IntegracaoTest {
                         containsString("src=\"http://vite.teste/src/ilhas/listagem.tsx\""),
                         not(containsString("<form")))));
     }
+
+    /** RF11 RN1-RN2, US04 e doc/api.md secao 2: /caderno-de-erros tem noindex, nao exibe anuncio e monta a ilha. */
+    @Test
+    void cadernoDeErrosUsaNoindexSemAnuncioECarregaIlha() throws Exception {
+        mockMvc.perform(get("/caderno-de-erros"))
+                .andExpect(status().isOk())
+                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE))
+                .andExpect(content().string(allOf(
+                        containsString("<title>Caderno de erros | Treino de Concursos</title>"),
+                        containsString("<meta name=\"robots\" content=\"noindex\">"),
+                        containsString("Caderno de erros"),
+                        containsString("data-ilha=\"caderno-de-erros\""),
+                        containsString("src=\"http://vite.teste/src/ilhas/listagem.tsx\""),
+                        not(containsString("adsbygoogle")),
+                        not(containsString("<form")))));
+    }
 }
 

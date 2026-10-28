@@ -1,6 +1,7 @@
 package br.com.treinoconcursos.controller;
 
 import br.com.treinoconcursos.dto.EstatisticasQuestaoResponse;
+import br.com.treinoconcursos.dto.QuestaoCadernoResponse;
 import br.com.treinoconcursos.dto.QuestoesIdsResponse;
 import br.com.treinoconcursos.dto.ReporteErroPublicoResponse;
 import br.com.treinoconcursos.dto.ReporteErroRequest;
@@ -24,10 +25,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
- * Endpoints JSON publicos de navegacao, estatisticas anonimas e reportes de erro das questoes (RF07, RF10, RF16, RF17).
+ * Endpoints JSON publicos de navegacao, caderno de erros, estatisticas anonimas e reportes de erro das questoes (RF07, RF10, RF11, RF16, RF17).
  */
-@Tag(name = "Questões (público)", description = "Navegação em ordem fixa por cursor, estatísticas anônimas e reportes de erro (RF07, RF10, RF16, RF17)")
+@Tag(name = "Questões (público)", description = "Navegação em ordem fixa por cursor, caderno de erros, estatísticas anônimas e reportes de erro (RF07, RF10, RF11, RF16, RF17)")
 @RestController
 @RequestMapping("/api/questoes")
 public class QuestaoApiPublicaController {
@@ -54,6 +57,14 @@ public class QuestaoApiPublicaController {
             @RequestParam(required = false) Integer depoisDe,
             @RequestParam(required = false) Integer limite) {
         return navegacaoService.buscarIds(materia, assunto, depoisDe, limite);
+    }
+
+    @Operation(summary = "Buscar dados mínimos de questões publicadas por ids para o caderno de erros", description = "Perfil: público (RF11, US04)")
+    @ApiResponse(responseCode = "200", description = "Dados mínimos das questões publicadas encontradas, em ordem crescente de id")
+    @GetMapping("/resumos")
+    public List<QuestaoCadernoResponse> listarResumos(
+            @RequestParam(required = false) List<Integer> ids) {
+        return navegacaoService.buscarResumosPorIds(ids);
     }
 
     @Operation(summary = "Registrar resposta anônima da questão", description = "Perfil: público")

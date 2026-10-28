@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import {
   armazenamentoDisponivel,
   buscarProximaNaoResolvida,
+  buscarProximaQuestaoCaderno,
+  ehFiltroCaderno,
+  extrairMateriaFiltroCaderno,
   foiResolvida,
   lerOcultarResolvidas,
   registrarResposta,
@@ -141,11 +144,47 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
     registrarUltimaVista(dados.id, dados.filtro);
   }, [dados.id, dados.filtro, dados.proximaUrl]);
 
-  // RF10 RN4: quando "Ocultar questoes ja resolvidas" estiver ativa, o botao
-  // "Proxima questao" e o link de navegacao pulam as questoes ja resolvidas.
+  // RF11 RN2, US04: quando a questao foi aberta pelo caderno de erros (?de=caderno),
+  // o botao "Proxima questao" aponta para a proxima questao do caderno (/questao/{id}/{slug}?de=caderno).
+  // RF10 RN4: nos demais filtros, quando "Ocultar questoes ja resolvidas" estiver ativa,
+  // o botao "Proxima questao" e o link de navegacao pulam as questoes ja resolvidas.
   useEffect(() => {
-    if (!lerOcultarResolvidas()) return;
     let cancelado = false;
+
+    if (ehFiltroCaderno(dados.filtro)) {
+      const materiaUrl = extrairMateriaFiltroCaderno(dados.filtro);
+      const opcoes = materiaUrl !== null ? { materia: materiaUrl } : {};
+      buscarProximaQuestaoCaderno(dados.id, opcoes)
+        .then((resultado) => {
+          if (cancelado) return;
+          const linkNavProxima = document.querySelector<HTMLAnchorElement>('.navegacao-questao a[rel="next"]');
+          const linkNavAnterior = document.querySelector<HTMLAnchorElement>('.navegacao-questao a[rel="prev"]');
+          if (linkNavAnterior) {
+            linkNavAnterior.hidden = true;
+          }
+          if (resultado) {
+            setProximaUrl(resultado.url);
+            if (linkNavProxima) {
+              linkNavProxima.href = resultado.url;
+              linkNavProxima.hidden = false;
+            }
+          } else {
+            setProximaUrl(null);
+            if (linkNavProxima) {
+              linkNavProxima.hidden = true;
+            }
+          }
+        })
+        .catch(() => {
+          // Em caso de falha de rede, mantem o link renderizado pelo servidor
+        });
+
+      return () => {
+        cancelado = true;
+      };
+    }
+
+    if (!lerOcultarResolvidas()) return;
 
     buscarProximaNaoResolvida(dados.filtro, { depoisDe: dados.id })
       .then((resultado) => {
@@ -316,6 +355,11 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
                 </span>
               )}
             </div>
+            {ehFiltroCaderno(dados.filtro) && acertou && (
+              <p className="aviso-caderno-removida" data-removida-caderno>
+                Questão removida do caderno de erros.
+              </p>
+            )}
             <div className="comentario texto" dangerouslySetInnerHTML={{ __html: dados.comentarioHtml }} />
           </div>
 

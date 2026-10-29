@@ -103,9 +103,9 @@
 
           <!--/* RF12 RN1-RN3: bloco de anuncio principal entre o comentario e o botao, com 100 px de espaco */-->
           <aside class="bloco-anuncio bloco-anuncio-questao espaco-anuncio-questao"
-                 th:attr="data-bloco-anuncio='questao',
-                          data-espaco-anuncio='true',
-                          data-ads-enabled=${#site.adsEnabled},
+                 data-bloco-anuncio="questao"
+                 data-espaco-anuncio="true"
+                 th:attr="data-ads-enabled=${#site.adsEnabled},
                           data-ad-client=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
                           data-ad-slot=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseSlotQuestao) ? #site.adsenseSlotQuestao : null},
                           data-consentimento-atual=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"
@@ -115,10 +115,10 @@
               <ins th:if="${#site.adsEnabled}"
                    class="adsbygoogle"
                    style="display:block"
+                   data-ad-format="horizontal"
+                   data-full-width-responsive="false"
                    th:attr="data-ad-client=${!#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
                             data-ad-slot=${!#strings.isEmpty(#site.adsenseSlotQuestao) ? #site.adsenseSlotQuestao : null},
-                            data-ad-format='horizontal',
-                            data-full-width-responsive='false',
                             data-npa=${#site.anunciosNaoPersonalizados ? '1' : null},
                             data-consentimento-aplicado=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"></ins>
             </div>
@@ -152,8 +152,8 @@
 
       <!--/* RF12 RN1: bloco lateral somente em telas com largura >= 1024 px */-->
       <aside class="bloco-anuncio bloco-anuncio-lateral"
-             th:attr="data-bloco-anuncio='lateral',
-                      data-ads-enabled=${#site.adsEnabled},
+             data-bloco-anuncio="lateral"
+             th:attr="data-ads-enabled=${#site.adsEnabled},
                       data-ad-client=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
                       data-ad-slot=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseSlotLateral) ? #site.adsenseSlotLateral : null},
                       data-consentimento-atual=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"
@@ -163,10 +163,10 @@
           <ins th:if="${#site.adsEnabled}"
                class="adsbygoogle"
                style="display:block"
+               data-ad-format="rectangle"
+               data-full-width-responsive="false"
                th:attr="data-ad-client=${!#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
                         data-ad-slot=${!#strings.isEmpty(#site.adsenseSlotLateral) ? #site.adsenseSlotLateral : null},
-                        data-ad-format='rectangle',
-                        data-full-width-responsive='false',
                         data-npa=${#site.anunciosNaoPersonalizados ? '1' : null},
                         data-consentimento-aplicado=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"></ins>
         </div>

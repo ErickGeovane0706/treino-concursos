@@ -70,16 +70,19 @@
       <nav aria-label="Filtrar por matéria" th:if="${!#lists.isEmpty(listagem.materias)}">
         <ul class="filters">
           <li>
-            <a class="chip"
-               href="/questoes"
-               th:attr="aria-current=${listagem.slugMateriaAtiva == null ? 'page' : null}">Todas</a>
+            <a class="chip" th:if="${listagem.slugMateriaAtiva == null}" href="/questoes" aria-current="page">Todas</a>
+            <a class="chip" th:if="${listagem.slugMateriaAtiva != null}" href="/questoes">Todas</a>
           </li>
           <li th:each="mat : ${listagem.materias}">
-            <a class="chip"
-               th:href="${mat.url}"
-               th:text="${mat.nome}"
-               th:attr="aria-current=${mat.ativo and listagem.slugAssuntoAtivo == null ? 'page' : null},
-                        data-ativo=${mat.ativo}">Português</a>
+            <a class="chip" th:if="${mat.ativo and listagem.slugAssuntoAtivo == null}"
+               th:href="${mat.url}" th:text="${mat.nome}"
+               aria-current="page" data-ativo="true">Português</a>
+            <a class="chip" th:if="${mat.ativo and listagem.slugAssuntoAtivo != null}"
+               th:href="${mat.url}" th:text="${mat.nome}"
+               data-ativo="true">Português</a>
+            <a class="chip" th:unless="${mat.ativo}"
+               th:href="${mat.url}" th:text="${mat.nome}"
+               data-ativo="false">Português</a>
           </li>
         </ul>
       </nav>
@@ -87,16 +90,19 @@
       <nav aria-label="Filtrar por assunto" th:if="${!#lists.isEmpty(listagem.assuntos)}">
         <ul class="filters filters-assuntos">
           <li>
-            <a class="chip"
+            <a class="chip" th:if="${listagem.slugAssuntoAtivo == null}"
                th:href="@{/questoes/{m}(m=${listagem.slugMateriaAtiva})}"
-               th:attr="aria-current=${listagem.slugAssuntoAtivo == null ? 'page' : null}">Todos os assuntos</a>
+               aria-current="page">Todos os assuntos</a>
+            <a class="chip" th:if="${listagem.slugAssuntoAtivo != null}"
+               th:href="@{/questoes/{m}(m=${listagem.slugMateriaAtiva})}">Todos os assuntos</a>
           </li>
           <li th:each="ass : ${listagem.assuntos}">
-            <a class="chip"
-               th:href="${ass.url}"
-               th:text="${ass.nome}"
-               th:attr="aria-current=${ass.ativo ? 'page' : null},
-                        data-ativo=${ass.ativo}">Crase</a>
+            <a class="chip" th:if="${ass.ativo}"
+               th:href="${ass.url}" th:text="${ass.nome}"
+               aria-current="page" data-ativo="true">Crase</a>
+            <a class="chip" th:unless="${ass.ativo}"
+               th:href="${ass.url}" th:text="${ass.nome}"
+               data-ativo="false">Crase</a>
           </li>
         </ul>
       </nav>

@@ -1,5 +1,6 @@
 package br.com.treinoconcursos.repository;
 
+import br.com.treinoconcursos.dto.ReferenciaQuestao;
 import br.com.treinoconcursos.model.Questao;
 import br.com.treinoconcursos.model.StatusQuestao;
 import org.springframework.data.domain.Page;
@@ -32,83 +33,87 @@ public interface QuestaoRepository extends JpaRepository<Questao, Integer> {
 
     /** RF06 RN3 / RF08 RN4: proxima e anterior publicadas em ordem crescente de id. */
     @Query("""
-            select q from Questao q
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
             where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
               and q.id > :id
             order by q.id asc
             limit 1
             """)
-    Optional<Questao> proximaPublicada(@Param("id") Integer id);
+    Optional<ReferenciaQuestao> proximaPublicada(@Param("id") Integer id);
 
     @Query("""
-            select q from Questao q
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
             where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
               and q.id < :id
             order by q.id desc
             limit 1
             """)
-    Optional<Questao> anteriorPublicada(@Param("id") Integer id);
+    Optional<ReferenciaQuestao> anteriorPublicada(@Param("id") Integer id);
 
     @Query("""
-            select q from Questao q
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
             where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
               and q.materia.id = :idMateria
               and q.id > :id
             order by q.id asc
             limit 1
             """)
-    Optional<Questao> proximaPublicadaPorMateria(@Param("idMateria") Integer idMateria, @Param("id") Integer id);
-
-    @Query("""
-            select q from Questao q
-            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
-              and q.materia.id = :idMateria
-              and q.id < :id
-            order by q.id desc
-            limit 1
-            """)
-    Optional<Questao> anteriorPublicadaPorMateria(@Param("idMateria") Integer idMateria, @Param("id") Integer id);
-
-    @Query("""
-            select q from Questao q
-            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
-              and q.assunto.id = :idAssunto
-              and q.id > :id
-            order by q.id asc
-            limit 1
-            """)
-    Optional<Questao> proximaPublicadaPorAssunto(@Param("idAssunto") Integer idAssunto, @Param("id") Integer id);
-
-    @Query("""
-            select q from Questao q
-            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
-              and q.assunto.id = :idAssunto
-              and q.id < :id
-            order by q.id desc
-            limit 1
-            """)
-    Optional<Questao> anteriorPublicadaPorAssunto(@Param("idAssunto") Integer idAssunto, @Param("id") Integer id);
-
-    @Query("""
-            select q from Questao q
-            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
-              and q.assunto.id in :idsAssunto
-              and q.id > :id
-            order by q.id asc
-            limit 1
-            """)
-    Optional<Questao> proximaPublicadaPorAssuntos(@Param("idsAssunto") Collection<Integer> idsAssunto,
+    Optional<ReferenciaQuestao> proximaPublicadaPorMateria(@Param("idMateria") Integer idMateria,
             @Param("id") Integer id);
 
     @Query("""
-            select q from Questao q
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.materia.id = :idMateria
+              and q.id < :id
+            order by q.id desc
+            limit 1
+            """)
+    Optional<ReferenciaQuestao> anteriorPublicadaPorMateria(@Param("idMateria") Integer idMateria,
+            @Param("id") Integer id);
+
+    @Query("""
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.assunto.id = :idAssunto
+              and q.id > :id
+            order by q.id asc
+            limit 1
+            """)
+    Optional<ReferenciaQuestao> proximaPublicadaPorAssunto(@Param("idAssunto") Integer idAssunto,
+            @Param("id") Integer id);
+
+    @Query("""
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.assunto.id = :idAssunto
+              and q.id < :id
+            order by q.id desc
+            limit 1
+            """)
+    Optional<ReferenciaQuestao> anteriorPublicadaPorAssunto(@Param("idAssunto") Integer idAssunto,
+            @Param("id") Integer id);
+
+    @Query("""
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.assunto.id in :idsAssunto
+              and q.id > :id
+            order by q.id asc
+            limit 1
+            """)
+    Optional<ReferenciaQuestao> proximaPublicadaPorAssuntos(@Param("idsAssunto") Collection<Integer> idsAssunto,
+            @Param("id") Integer id);
+
+    @Query("""
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
             where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
               and q.assunto.id in :idsAssunto
               and q.id < :id
             order by q.id desc
             limit 1
             """)
-    Optional<Questao> anteriorPublicadaPorAssuntos(@Param("idsAssunto") Collection<Integer> idsAssunto,
+    Optional<ReferenciaQuestao> anteriorPublicadaPorAssuntos(@Param("idsAssunto") Collection<Integer> idsAssunto,
             @Param("id") Integer id);
 
     /** RF07 RN2-RN3: listagem publica por cursor em ordem crescente de id. */

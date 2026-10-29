@@ -5,12 +5,11 @@ import br.com.treinoconcursos.dto.ListagemQuestoesView.ChipFiltroView;
 import br.com.treinoconcursos.dto.ListagemQuestoesView.ItemQuestaoView;
 import br.com.treinoconcursos.dto.QuestaoCadernoResponse;
 import br.com.treinoconcursos.dto.QuestoesIdsResponse;
-import br.com.treinoconcursos.model.Assunto;
-import br.com.treinoconcursos.model.Materia;
+import br.com.treinoconcursos.dto.ReferenciaQuestao;
 import br.com.treinoconcursos.model.Questao;
-import br.com.treinoconcursos.repository.AssuntoRepository;
-import br.com.treinoconcursos.repository.MateriaRepository;
 import br.com.treinoconcursos.repository.QuestaoRepository;
+import br.com.treinoconcursos.service.ClassificacaoCacheService.AssuntoCache;
+import br.com.treinoconcursos.service.ClassificacaoCacheService.MateriaCache;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -18,12 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -32,6 +26,9 @@ import java.util.regex.Pattern;
  *
  * Tambem calcula a questao anterior e a proxima dentro do filtro indicado em
  * {@code ?de=}, reutilizado pela pagina publica da questao (RF06 RN3, RF08 RN4).
+ *
+ * As classificacoes (materias e arvore de assuntos) sao lidas em memoria via
+ * {@link ClassificacaoCacheService} para reduzir consultas ao banco (RNF03).
  */
 @Service
 public class NavegacaoQuestoesService {
@@ -46,28 +43,21 @@ public class NavegacaoQuestoesService {
             Pattern.compile("^[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*)?$");
 
     private final QuestaoRepository questaoRepository;
-    private final MateriaRepository materiaRepository;
-    private final AssuntoRepository assuntoRepository;
+    private final ClassificacaoCacheService classificacaoCacheService;
     private final MarkdownService markdownService;
 
-    public NavegacaoQuestoesService(QuestaoRepository questaoRepository, MateriaRepository materiaRepository,
-            AssuntoRepository assuntoRepository, MarkdownService markdownService) {
+    public NavegacaoQuestoesService(QuestaoRepository questaoRepository,
+            ClassificacaoCacheService classificacaoCacheService,
+            MarkdownService markdownService) {
         this.questaoRepository = questaoRepository;
-        this.materiaRepository = materiaRepository;
-        this.assuntoRepository = assuntoRepository;
+        this.classificacaoCacheService = classificacaoCacheService;
         this.markdownService = markdownService;
     }
 
-    /** Materias ativas para a pagina inicial e para os filtros de listagem (RF07). */
+    /** Materias ativas para a pagina inicial e para os filtros de listagem (RF07, RNF03). */
     @Transactional(readOnly = true)
     public List<ChipFiltroView> listarMateriasAtivas(String slugMateriaAtiva) {
-        return materiaRepository.findByAtivaTrueOrderByNomeAsc().stream()
-                .map(m -> new ChipFiltroView(
-                        m.getNome(),
-                        m.getSlug(),
-                        "/questoes/" + m.getSlug(),
-                        m.getSlug().equals(slugMateriaAtiva)))
-                .toList();
+        return classificacaoCacheService.listarMateriasAtivas(slugMateriaAtiva);
     }
 
     /**
@@ -79,9 +69,9 @@ public class NavegacaoQuestoesService {
         int cursor = cursorValido(depoisDe);
         Pageable janela = PageRequest.of(0, TAMANHO_PAGINA_HTML + 1);
 
-        Materia materia = null;
-        Assunto assunto = null;
-        List<Questao> encontradas;
+        MateriaCache materia = null;
+        AssuntoCache assunto = null;
+        List<Integer> idsEncontrados;
         String filtroAtivo = null;
         String caminhoBase = "/questoes";
         String tituloPagina = "Questões de Concursos";
@@ -89,41 +79,42 @@ public class NavegacaoQuestoesService {
         String metaDescricao = "Resolva questões de concursos públicos grátis, com gabarito e comentário.";
 
         if (slugMateria != null) {
-            materia = materiaRepository.findBySlug(slugMateria)
+            materia = classificacaoCacheService.buscarMateriaPorSlug(slugMateria)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-            filtroAtivo = materia.getSlug();
-            caminhoBase = "/questoes/" + materia.getSlug();
-            tituloPagina = "Questões de " + materia.getNome();
-            tituloH1 = "Questões de " + materia.getNome();
-            metaDescricao = "Questões de " + materia.getNome()
+            filtroAtivo = materia.slug();
+            caminhoBase = "/questoes/" + materia.slug();
+            tituloPagina = "Questões de " + materia.nome();
+            tituloH1 = "Questões de " + materia.nome();
+            metaDescricao = "Questões de " + materia.nome()
                     + " para concursos públicos, com correção imediata e comentário.";
 
             if (slugAssunto != null) {
-                List<Assunto> todosDaMateria = assuntoRepository.findByMateriaIdOrderByNome(materia.getId());
-                assunto = todosDaMateria.stream()
-                        .filter(a -> a.getSlug().equals(slugAssunto))
-                        .findFirst()
+                assunto = classificacaoCacheService.buscarAssuntoPorSlug(materia.id(), slugAssunto)
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-                List<Integer> idsAssunto = idsComSubassuntos(todosDaMateria, assunto.getId());
-                encontradas = idsAssunto.size() == 1
-                        ? questaoRepository.listarPublicadasPorAssuntoDepoisDe(idsAssunto.get(0), cursor, janela)
-                        : questaoRepository.listarPublicadasPorAssuntosDepoisDe(idsAssunto, cursor, janela);
-                filtroAtivo = materia.getSlug() + "/" + assunto.getSlug();
+                List<Integer> idsAssunto = classificacaoCacheService.idsDoAssuntoESubassuntos(
+                        materia.id(), assunto.slug());
+                idsEncontrados = idsAssunto.size() == 1
+                        ? questaoRepository.buscarIdsPublicadasPorAssuntoDepoisDe(idsAssunto.get(0), cursor, janela)
+                        : questaoRepository.buscarIdsPublicadasPorAssuntosDepoisDe(idsAssunto, cursor, janela);
+                filtroAtivo = materia.slug() + "/" + assunto.slug();
                 caminhoBase = "/questoes/" + filtroAtivo;
-                tituloPagina = "Questões de " + assunto.getNome() + " – " + materia.getNome();
-                tituloH1 = "Questões de " + assunto.getNome();
-                metaDescricao = "Questões de " + assunto.getNome() + " (" + materia.getNome()
+                tituloPagina = "Questões de " + assunto.nome() + " – " + materia.nome();
+                tituloH1 = "Questões de " + assunto.nome();
+                metaDescricao = "Questões de " + assunto.nome() + " (" + materia.nome()
                         + ") para concursos públicos, com gabarito e comentário.";
             } else {
-                encontradas = questaoRepository.listarPublicadasPorMateriaDepoisDe(materia.getId(), cursor, janela);
+                idsEncontrados = questaoRepository.buscarIdsPublicadasPorMateriaDepoisDe(materia.id(), cursor, janela);
             }
         } else {
-            encontradas = questaoRepository.listarPublicadasDepoisDe(cursor, janela);
+            idsEncontrados = questaoRepository.buscarIdsPublicadasDepoisDe(cursor, janela);
         }
 
-        boolean temMais = encontradas.size() > TAMANHO_PAGINA_HTML;
-        List<Questao> pagina = temMais ? encontradas.subList(0, TAMANHO_PAGINA_HTML) : encontradas;
-        Integer proximoCursor = temMais ? pagina.get(pagina.size() - 1).getId() : null;
+        boolean temMais = idsEncontrados.size() > TAMANHO_PAGINA_HTML;
+        List<Integer> idsPagina = temMais ? idsEncontrados.subList(0, TAMANHO_PAGINA_HTML) : idsEncontrados;
+        List<Questao> pagina = idsPagina.isEmpty()
+                ? List.of()
+                : questaoRepository.listarPublicadasPorIds(idsPagina);
+        Integer proximoCursor = temMais && !idsPagina.isEmpty() ? idsPagina.get(idsPagina.size() - 1) : null;
         String proximaPaginaUrl = proximoCursor != null ? caminhoBase + "?depoisDe=" + proximoCursor : null;
 
         String filtroUrl = filtroAtivo;
@@ -131,19 +122,20 @@ public class NavegacaoQuestoesService {
                 .map(q -> paraItemView(q, filtroUrl))
                 .toList();
 
-        List<ChipFiltroView> chipsMaterias = listarMateriasAtivas(materia != null ? materia.getSlug() : null);
+        List<ChipFiltroView> chipsMaterias = listarMateriasAtivas(materia != null ? materia.slug() : null);
         List<ChipFiltroView> chipsAssuntos = materia != null
-                ? listarAssuntosAtivosDaMateria(materia, assunto != null ? assunto.getSlug() : null)
+                ? classificacaoCacheService.listarAssuntosAtivosDaMateria(
+                        materia, assunto != null ? assunto.slug() : null)
                 : List.of();
 
         return new ListagemQuestoesView(
                 QuestaoPublicaService.cortar(tituloPagina, QuestaoPublicaService.LIMITE_TITULO_PAGINA),
                 tituloH1,
                 QuestaoPublicaService.cortar(metaDescricao, QuestaoPublicaService.LIMITE_META_DESCRICAO),
-                materia != null ? materia.getSlug() : null,
-                materia != null ? materia.getNome() : null,
-                assunto != null ? assunto.getSlug() : null,
-                assunto != null ? assunto.getNome() : null,
+                materia != null ? materia.slug() : null,
+                materia != null ? materia.nome() : null,
+                assunto != null ? assunto.slug() : null,
+                assunto != null ? assunto.nome() : null,
                 filtroAtivo,
                 caminhoBase,
                 chipsMaterias,
@@ -201,10 +193,10 @@ public class NavegacaoQuestoesService {
     public Vizinhanca buscarVizinhanca(Integer idQuestao, String filtroNormalizado) {
         if (filtroNormalizado != null) {
             String[] partes = filtroNormalizado.split("/", 2);
-            Materia materia = materiaRepository.findBySlug(partes[0]).orElse(null);
+            MateriaCache materia = classificacaoCacheService.buscarMateriaPorSlug(partes[0]).orElse(null);
             if (materia != null) {
                 if (partes.length == 2) {
-                    List<Integer> idsAssunto = idsDoAssuntoESubassuntos(materia.getId(), partes[1]);
+                    List<Integer> idsAssunto = idsDoAssuntoESubassuntos(materia.id(), partes[1]);
                     if (!idsAssunto.isEmpty()) {
                         if (idsAssunto.size() == 1) {
                             Integer idUnico = idsAssunto.get(0);
@@ -218,8 +210,8 @@ public class NavegacaoQuestoesService {
                     }
                 }
                 return new Vizinhanca(
-                        questaoRepository.anteriorPublicadaPorMateria(materia.getId(), idQuestao).orElse(null),
-                        questaoRepository.proximaPublicadaPorMateria(materia.getId(), idQuestao).orElse(null));
+                        questaoRepository.anteriorPublicadaPorMateria(materia.id(), idQuestao).orElse(null),
+                        questaoRepository.proximaPublicadaPorMateria(materia.id(), idQuestao).orElse(null));
             }
         }
         return new Vizinhanca(
@@ -233,12 +225,7 @@ public class NavegacaoQuestoesService {
      */
     @Transactional(readOnly = true)
     public List<Integer> idsDoAssuntoESubassuntos(Integer idMateria, String slugAssunto) {
-        List<Assunto> todos = assuntoRepository.findByMateriaIdOrderByNome(idMateria);
-        Assunto raiz = todos.stream().filter(a -> a.getSlug().equals(slugAssunto)).findFirst().orElse(null);
-        if (raiz == null) {
-            return List.of();
-        }
-        return idsComSubassuntos(todos, raiz.getId());
+        return classificacaoCacheService.idsDoAssuntoESubassuntos(idMateria, slugAssunto);
     }
 
     public static String normalizarFiltro(String de) {
@@ -251,12 +238,12 @@ public class NavegacaoQuestoesService {
 
     private List<Integer> consultarIdsPorFiltro(String slugMateria, String slugAssunto, int cursor, Pageable janela) {
         if (slugMateria != null) {
-            Materia materia = materiaRepository.findBySlug(slugMateria).orElse(null);
+            MateriaCache materia = classificacaoCacheService.buscarMateriaPorSlug(slugMateria).orElse(null);
             if (materia == null) {
                 return List.of();
             }
             if (slugAssunto != null) {
-                List<Integer> idsAssunto = idsDoAssuntoESubassuntos(materia.getId(), slugAssunto);
+                List<Integer> idsAssunto = idsDoAssuntoESubassuntos(materia.id(), slugAssunto);
                 if (idsAssunto.isEmpty()) {
                     return List.of();
                 }
@@ -264,23 +251,12 @@ public class NavegacaoQuestoesService {
                         ? questaoRepository.buscarIdsPublicadasPorAssuntoDepoisDe(idsAssunto.get(0), cursor, janela)
                         : questaoRepository.buscarIdsPublicadasPorAssuntosDepoisDe(idsAssunto, cursor, janela);
             }
-            return questaoRepository.buscarIdsPublicadasPorMateriaDepoisDe(materia.getId(), cursor, janela);
+            return questaoRepository.buscarIdsPublicadasPorMateriaDepoisDe(materia.id(), cursor, janela);
         }
         if (slugAssunto != null) {
             return List.of();
         }
         return questaoRepository.buscarIdsPublicadasDepoisDe(cursor, janela);
-    }
-
-    private List<ChipFiltroView> listarAssuntosAtivosDaMateria(Materia materia, String slugAssuntoAtivo) {
-        return assuntoRepository.findByMateriaIdOrderByNome(materia.getId()).stream()
-                .filter(Assunto::isAtivo)
-                .map(a -> new ChipFiltroView(
-                        a.getNome(),
-                        a.getSlug(),
-                        "/questoes/" + materia.getSlug() + "/" + a.getSlug(),
-                        a.getSlug().equals(slugAssuntoAtivo)))
-                .toList();
     }
 
     private ItemQuestaoView paraItemView(Questao q, String filtro) {
@@ -317,24 +293,6 @@ public class NavegacaoQuestoesService {
                 q.isDesatualizada());
     }
 
-    private static List<Integer> idsComSubassuntos(List<Assunto> todosDaMateria, Integer idRaiz) {
-        Map<Integer, List<Integer>> filhosPorPai = new HashMap<>();
-        for (Assunto a : todosDaMateria) {
-            if (a.getAssuntoPai() != null) {
-                filhosPorPai.computeIfAbsent(a.getAssuntoPai().getId(), k -> new ArrayList<>()).add(a.getId());
-            }
-        }
-        List<Integer> ids = new ArrayList<>();
-        Deque<Integer> fila = new ArrayDeque<>();
-        fila.add(idRaiz);
-        while (!fila.isEmpty()) {
-            Integer atual = fila.removeFirst();
-            ids.add(atual);
-            fila.addAll(filhosPorPai.getOrDefault(atual, List.of()));
-        }
-        return ids;
-    }
-
     private static int cursorValido(Integer depoisDe) {
         return depoisDe == null || depoisDe < 0 ? 0 : depoisDe;
     }
@@ -353,6 +311,6 @@ public class NavegacaoQuestoesService {
         return valor.trim();
     }
 
-    public record Vizinhanca(Questao anterior, Questao proxima) {
+    public record Vizinhanca(ReferenciaQuestao anterior, ReferenciaQuestao proxima) {
     }
 }

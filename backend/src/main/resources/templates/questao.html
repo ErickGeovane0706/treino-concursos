@@ -1,97 +1,247 @@
 <!DOCTYPE html>
 <!--/*
-  Pagina publica permanente da questao (RF06, RF08, US01).
+  Pagina publica permanente da questao (RF06, RF08, US01, RNF03).
   Funciona sem JavaScript: enunciado, alternativas, gabarito e comentario ja
   vem no HTML, com a resposta recolhida em <details> (RF06 RN4, RF08 RN2).
   Com JavaScript, a ilha treino.tsx corrige ao tocar, aplica ok/bad/dim e foca
   o link "Proxima questao".
+  Template autocontido para aproveitar integralmente o cache de templates do
+  Thymeleaf em producao sem re-parsear seletores a cada requisicao (RNF03).
 */-->
-<html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout :: pagina(${questao.tituloPagina}, ${questao.metaDescricao}, true, ${ {'src/ilhas/treino.tsx'} }, ~{::.conteudo})}">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:with="ativosConsentimento=${#vite.ativos('src/consentimento/main.ts')},
+               ativosIlha=${#vite.ativos('src/ilhas/treino.tsx')}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title th:text="${questao.tituloPagina == null ? #site.nome : questao.tituloPagina + ' | ' + #site.nome}">Treino de Concursos</title>
+  <meta name="description" th:if="${questao.metaDescricao != null}" th:content="${questao.metaDescricao}">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#EEF2F7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0F1626" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/css/site.css">
+  <link rel="preload" href="/fontes/public-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <th:block th:if="${#vite.dev()}">
+    <script type="module" th:each="js : ${#vite.scriptsDev()}" th:src="${js}"></script>
+  </th:block>
+  <th:block th:if="${ativosConsentimento != null}">
+    <link rel="stylesheet" th:each="css : ${ativosConsentimento.estilos()}" th:href="${css}">
+  </th:block>
+  <th:block th:if="${ativosIlha != null}">
+    <link rel="stylesheet" th:each="css : ${ativosIlha.estilos()}" th:href="${css}">
+  </th:block>
+</head>
 <body>
-  <div class="conteudo layout-questao">
-    <article class="card questao">
-      <div class="meta">
-        <nav class="trilha" aria-label="Classificação da questão">
-          <a th:href="@{/questoes/{m}(m=${questao.slugMateria})}" th:text="${questao.nomeMateria}">Português</a>
-          <th:block th:if="${questao.slugAssunto != null}">
-            <span aria-hidden="true">›</span>
-            <a th:href="@{/questoes/{m}/{a}(m=${questao.slugMateria},a=${questao.slugAssunto})}"
-               th:text="${questao.nomeAssunto}">Concordância verbal</a>
-          </th:block>
-        </nav>
-        <span class="origem" th:text="${questao.fonte}">Questão autoral</span>
-      </div>
+  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
-      <div class="avisos-questao" th:if="${questao.anulada or questao.desatualizada}">
-        <p class="aviso-questao aviso-anulada" role="status" th:if="${questao.anulada}">
-          Questão anulada pela banca
-        </p>
-        <p class="aviso-questao aviso-desatualizada" role="status" th:if="${questao.desatualizada}">
-          Questão desatualizada
-        </p>
-      </div>
-
-      <h1 class="identificacao-questao" th:text="'Questão #' + ${questao.id}">Questão #1</h1>
-
-      <div class="enunciado texto" th:utext="${questao.enunciadoHtml}"></div>
-
-      <div data-ilha="treino"
-           th:attr="data-id=${questao.id},
-                    data-correta=${questao.letraCorreta},
-                    data-rotulo-correta=${questao.rotuloCorreta},
-                    data-tipo=${questao.tipo},
-                    data-proxima-url=${questao.proximaUrl},
-                    data-listagem-url=${questao.listagemUrl},
-                    data-filtro=${questao.filtroAtivo}">
-        <ul class="opts">
-          <li th:each="alt : ${questao.alternativas}">
-            <button type="button" class="opt" th:attr="data-letra=${alt.letra}">
-              <span class="l" th:text="${alt.letra}">A</span>
-              <span class="opt-texto" th:utext="${alt.textoHtml}">Alternativa</span>
-            </button>
-          </li>
+  <header class="topo">
+    <div class="wrap">
+      <a class="marca" href="/" th:text="${#site.nome}">Treino de Concursos</a>
+      <nav aria-label="Principal">
+        <ul class="menu">
+          <li><a href="/questoes">Questões</a></li>
+          <li><a href="/caderno-de-erros">Caderno de erros</a></li>
+          <li><a href="/meu-progresso">Meu progresso</a></li>
         </ul>
-
-        <details class="gabarito" data-gabarito>
-          <summary>Ver resposta</summary>
-          <div class="fb">
-            <strong th:text="'Gabarito: ' + ${questao.rotuloCorreta}">Gabarito: A</strong>
-            <div class="comentario texto" data-comentario-html th:utext="${questao.comentarioHtml}"></div>
-          </div>
-        </details>
-
-        <!--/* RF12 RN1-RN3: bloco de anuncio principal entre o comentario e o botao, com 100 px de espaco */-->
-        <aside th:replace="~{fragmentos/bloco-anuncio :: bloco-anuncio('questao', ${#site.adsenseSlotQuestao})}"></aside>
-
-        <div class="acoes-treino">
-          <a class="btn btn-bloco"
-             th:href="${questao.proximaUrl != null ? questao.proximaUrl : questao.listagemUrl}"
-             th:text="${questao.proximaUrl != null ? 'Próxima questão' : 'Ver mais questões'}"
-             data-proxima>Próxima questão</a>
-        </div>
-      </div>
-
-      <!--/* RF16 RN1-RN3, US07: botao para reportar erro sem coletar dados pessoais */-->
-      <div class="secao-reporte" data-ilha="reporte" th:attr="data-id=${questao.id}">
-        <button type="button" class="btn-reportar" data-abrir-reporte>Reportar erro</button>
-      </div>
-
-      <nav class="navegacao-questao" aria-label="Navegação da questão">
-        <a class="link-nav" th:if="${questao.anteriorUrl != null}" th:href="${questao.anteriorUrl}" rel="prev">
-          ← Questão anterior
-        </a>
-        <a class="link-nav" th:href="${questao.listagemUrl}" th:text="${questao.rotuloListagem}">
-          Questões do assunto
-        </a>
-        <a class="link-nav" th:if="${questao.proximaUrl != null}" th:href="${questao.proximaUrl}" rel="next">
-          Próxima questão →
-        </a>
       </nav>
-    </article>
+    </div>
+  </header>
 
-    <!--/* RF12 RN1: bloco lateral somente em telas com largura >= 1024 px */-->
-    <aside th:replace="~{fragmentos/bloco-anuncio :: bloco-anuncio('lateral', ${#site.adsenseSlotLateral})}"></aside>
+  <main id="conteudo" class="wrap">
+    <div class="conteudo layout-questao">
+      <article class="card questao">
+        <div class="meta">
+          <nav class="trilha" aria-label="Classificação da questão">
+            <a th:href="@{/questoes/{m}(m=${questao.slugMateria})}" th:text="${questao.nomeMateria}">Português</a>
+            <th:block th:if="${questao.slugAssunto != null}">
+              <span aria-hidden="true">›</span>
+              <a th:href="@{/questoes/{m}/{a}(m=${questao.slugMateria},a=${questao.slugAssunto})}"
+                 th:text="${questao.nomeAssunto}">Concordância verbal</a>
+            </th:block>
+          </nav>
+          <span class="origem" th:text="${questao.fonte}">Questão autoral</span>
+        </div>
+
+        <div class="avisos-questao" th:if="${questao.anulada or questao.desatualizada}">
+          <p class="aviso-questao aviso-anulada" role="status" th:if="${questao.anulada}">
+            Questão anulada pela banca
+          </p>
+          <p class="aviso-questao aviso-desatualizada" role="status" th:if="${questao.desatualizada}">
+            Questão desatualizada
+          </p>
+        </div>
+
+        <h1 class="identificacao-questao" th:text="'Questão #' + ${questao.id}">Questão #1</h1>
+
+        <div class="enunciado texto" th:utext="${questao.enunciadoHtml}"></div>
+
+        <div data-ilha="treino"
+             th:attr="data-id=${questao.id},
+                      data-correta=${questao.letraCorreta},
+                      data-rotulo-correta=${questao.rotuloCorreta},
+                      data-tipo=${questao.tipo},
+                      data-proxima-url=${questao.proximaUrl},
+                      data-listagem-url=${questao.listagemUrl},
+                      data-filtro=${questao.filtroAtivo}">
+          <ul class="opts">
+            <li th:each="alt : ${questao.alternativas}">
+              <button type="button" class="opt" th:attr="data-letra=${alt.letra}">
+                <span class="l" th:text="${alt.letra}">A</span>
+                <span class="opt-texto" th:utext="${alt.textoHtml}">Alternativa</span>
+              </button>
+            </li>
+          </ul>
+
+          <details class="gabarito" data-gabarito>
+            <summary>Ver resposta</summary>
+            <div class="fb">
+              <strong th:text="'Gabarito: ' + ${questao.rotuloCorreta}">Gabarito: A</strong>
+              <div class="comentario texto" data-comentario-html th:utext="${questao.comentarioHtml}"></div>
+            </div>
+          </details>
+
+          <!--/* RF12 RN1-RN3: bloco de anuncio principal entre o comentario e o botao, com 100 px de espaco */-->
+          <aside class="bloco-anuncio bloco-anuncio-questao espaco-anuncio-questao"
+                 th:attr="data-bloco-anuncio='questao',
+                          data-espaco-anuncio='true',
+                          data-ads-enabled=${#site.adsEnabled},
+                          data-ad-client=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
+                          data-ad-slot=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseSlotQuestao) ? #site.adsenseSlotQuestao : null},
+                          data-consentimento-atual=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"
+                 aria-label="Publicidade">
+            <span class="rotulo-anuncio">Publicidade</span>
+            <div class="area-anuncio" data-area-anuncio>
+              <ins th:if="${#site.adsEnabled}"
+                   class="adsbygoogle"
+                   style="display:block"
+                   th:attr="data-ad-client=${!#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
+                            data-ad-slot=${!#strings.isEmpty(#site.adsenseSlotQuestao) ? #site.adsenseSlotQuestao : null},
+                            data-ad-format='horizontal',
+                            data-full-width-responsive='false',
+                            data-npa=${#site.anunciosNaoPersonalizados ? '1' : null},
+                            data-consentimento-aplicado=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"></ins>
+            </div>
+          </aside>
+
+          <div class="acoes-treino">
+            <a class="btn btn-bloco"
+               th:href="${questao.proximaUrl != null ? questao.proximaUrl : questao.listagemUrl}"
+               th:text="${questao.proximaUrl != null ? 'Próxima questão' : 'Ver mais questões'}"
+               data-proxima>Próxima questão</a>
+          </div>
+        </div>
+
+        <!--/* RF16 RN1-RN3, US07: botao para reportar erro sem coletar dados pessoais */-->
+        <div class="secao-reporte" data-ilha="reporte" th:attr="data-id=${questao.id}">
+          <button type="button" class="btn-reportar" data-abrir-reporte>Reportar erro</button>
+        </div>
+
+        <nav class="navegacao-questao" aria-label="Navegação da questão">
+          <a class="link-nav" th:if="${questao.anteriorUrl != null}" th:href="${questao.anteriorUrl}" rel="prev">
+            ← Questão anterior
+          </a>
+          <a class="link-nav" th:href="${questao.listagemUrl}" th:text="${questao.rotuloListagem}">
+            Questões do assunto
+          </a>
+          <a class="link-nav" th:if="${questao.proximaUrl != null}" th:href="${questao.proximaUrl}" rel="next">
+            Próxima questão →
+          </a>
+        </nav>
+      </article>
+
+      <!--/* RF12 RN1: bloco lateral somente em telas com largura >= 1024 px */-->
+      <aside class="bloco-anuncio bloco-anuncio-lateral"
+             th:attr="data-bloco-anuncio='lateral',
+                      data-ads-enabled=${#site.adsEnabled},
+                      data-ad-client=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
+                      data-ad-slot=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseSlotLateral) ? #site.adsenseSlotLateral : null},
+                      data-consentimento-atual=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"
+             aria-label="Publicidade">
+        <span class="rotulo-anuncio">Publicidade</span>
+        <div class="area-anuncio" data-area-anuncio>
+          <ins th:if="${#site.adsEnabled}"
+               class="adsbygoogle"
+               style="display:block"
+               th:attr="data-ad-client=${!#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
+                        data-ad-slot=${!#strings.isEmpty(#site.adsenseSlotLateral) ? #site.adsenseSlotLateral : null},
+                        data-ad-format='rectangle',
+                        data-full-width-responsive='false',
+                        data-npa=${#site.anunciosNaoPersonalizados ? '1' : null},
+                        data-consentimento-aplicado=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"></ins>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="rodape">
+    <div class="wrap">
+      <nav aria-label="Institucional">
+        <ul>
+          <li><a href="/sobre">Sobre</a></li>
+          <li><a href="/contato">Contato</a></li>
+          <li><a href="/privacidade">Política de Privacidade</a></li>
+          <li><a href="/termos">Termos de Uso</a></li>
+          <li><a href="/cookies">Política de Cookies</a></li>
+          <li><button type="button" class="link" data-abrir-aviso-cookies hidden>Preferências de cookies</button></li>
+        </ul>
+      </nav>
+      <p>
+        © <span th:text="${#dates.year(#dates.createNow())}">2026</span>
+        <span th:text="${#site.nome}">Treino de Concursos</span>. Banco de questões gratuito, sem cadastro.
+      </p>
+    </div>
+  </footer>
+
+  <div class="aviso-cookies" data-aviso-cookies hidden role="region" aria-label="Aviso de cookies">
+    <div class="wrap">
+      <p>
+        Guardamos seu progresso só no seu navegador e usamos cookies do Google para exibir anúncios,
+        que mantêm o site gratuito. Você aceita anúncios personalizados?
+        <a href="/cookies">Saiba mais</a>
+      </p>
+      <div class="acoes">
+        <button type="button" class="btn" data-consentimento="personalizados">Aceitar</button>
+        <button type="button" class="btn ghost" data-consentimento="nao-personalizados">Recusar</button>
+      </div>
+    </div>
   </div>
+
+  <th:block th:if="${ativosConsentimento != null}">
+    <link rel="modulepreload" th:each="js : ${ativosConsentimento.preload()}" th:href="${js}">
+    <script type="module" th:src="${ativosConsentimento.script()}"></script>
+  </th:block>
+  <th:block th:if="${ativosIlha != null}">
+    <link rel="modulepreload" th:each="js : ${ativosIlha.preload()}" th:href="${js}">
+    <script type="module" th:src="${ativosIlha.script()}"></script>
+  </th:block>
+
+  <th:block th:if="${exibirAnuncios == true and #site.adsEnabled}">
+    <script th:inline="javascript"
+            data-adsense-script
+            th:attr="data-adsense-src=${#site.scriptAdsenseUrl}">
+      (function () {
+        (window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = /*[[${#site.anunciosPersonalizados ? 0 : 1}]]*/ 1;
+        var url = /*[[${#site.scriptAdsenseUrl}]]*/ '';
+        if (!url) return;
+        var carregado = false;
+        function carregarAdsense() {
+          if (carregado) return;
+          carregado = true;
+          var s = document.createElement('script');
+          s.async = true;
+          s.crossOrigin = 'anonymous';
+          s.src = url;
+          document.body.appendChild(s);
+        }
+        ['pointerdown', 'keydown', 'touchstart', 'scroll', 'mousemove'].forEach(function (ev) {
+          window.addEventListener(ev, carregarAdsense, { once: true, passive: true });
+        });
+        window.addEventListener('load', function () {
+          setTimeout(carregarAdsense, 8000);
+        }, { once: true });
+      })();
+    </script>
+  </th:block>
 </body>
 </html>

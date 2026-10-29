@@ -30,12 +30,14 @@ public class AssuntoService {
     private final AssuntoRepository assuntoRepository;
     private final QuestaoRepository questaoRepository;
     private final MateriaService materiaService;
+    private final ClassificacaoCacheService classificacaoCacheService;
 
     public AssuntoService(AssuntoRepository assuntoRepository, QuestaoRepository questaoRepository,
-            MateriaService materiaService) {
+            MateriaService materiaService, ClassificacaoCacheService classificacaoCacheService) {
         this.assuntoRepository = assuntoRepository;
         this.questaoRepository = questaoRepository;
         this.materiaService = materiaService;
+        this.classificacaoCacheService = classificacaoCacheService;
     }
 
     @Transactional(readOnly = true)
@@ -69,6 +71,7 @@ public class AssuntoService {
         assunto.setSlug(slug);
         assunto.setAtivo(request.ativo());
         assuntoRepository.save(assunto);
+        classificacaoCacheService.invalidar();
         return new Arvore(assuntoRepository.findByMateriaIdOrderByNome(idMateria)).resposta(assunto);
     }
 
@@ -93,6 +96,7 @@ public class AssuntoService {
         assunto.setAssuntoPai(validarPai(arvore, request.idAssuntoPai(), assunto));
         assunto.setNome(nome);
         assunto.setAtivo(request.ativo());
+        classificacaoCacheService.invalidar();
         return new Arvore(assuntoRepository.findByMateriaIdOrderByNome(idMateria)).resposta(assunto);
     }
 
@@ -107,6 +111,7 @@ public class AssuntoService {
             throw new RegraNegocioException("O assunto tem subassuntos. Exclua-os ou mova-os antes.");
         }
         assuntoRepository.deleteById(id);
+        classificacaoCacheService.invalidar();
     }
 
     /**

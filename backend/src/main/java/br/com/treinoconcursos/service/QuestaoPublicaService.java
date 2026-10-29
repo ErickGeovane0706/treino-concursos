@@ -3,6 +3,7 @@ package br.com.treinoconcursos.service;
 import br.com.treinoconcursos.config.SiteConfig;
 import br.com.treinoconcursos.dto.QuestaoPaginaView;
 import br.com.treinoconcursos.dto.QuestaoPaginaView.AlternativaView;
+import br.com.treinoconcursos.dto.ReferenciaQuestao;
 import br.com.treinoconcursos.model.Alternativa;
 import br.com.treinoconcursos.model.Assunto;
 import br.com.treinoconcursos.model.Materia;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Monta os dados da pagina publica da questao (RF06, RF08, US01).
@@ -30,6 +32,9 @@ public class QuestaoPublicaService {
     static final int LIMITE_TITULO_TOTAL = 60;
     static final int LIMITE_TITULO_PAGINA = LIMITE_TITULO_TOTAL - (" | " + SiteConfig.NOME).length();
     static final int LIMITE_META_DESCRICAO = 155;
+
+    private static final Pattern TAGS_HTML = Pattern.compile("<[^>]+>");
+    private static final Pattern ESPACOS_CONSECUTIVOS = Pattern.compile("\\s+");
 
     private final QuestaoRepository questaoRepository;
     private final NavegacaoQuestoesService navegacaoService;
@@ -126,8 +131,8 @@ public class QuestaoPublicaService {
         return filtro == null ? base : base + "?de=" + filtro;
     }
 
-    private static String urlDeQuestao(Questao questao, String filtro) {
-        return questao == null ? null : urlCanonica(questao.getId(), questao.getSlug(), filtro);
+    private static String urlDeQuestao(ReferenciaQuestao questao, String filtro) {
+        return questao == null ? null : urlCanonica(questao.id(), questao.slug(), filtro);
     }
 
     /** RF04 RN3 e RF08 RN3: banca, orgao, ano e cargo, ou "Questao autoral". */
@@ -150,14 +155,13 @@ public class QuestaoPublicaService {
         if (html == null || html.isBlank()) {
             return "";
         }
-        return html.replaceAll("<[^>]+>", " ")
+        String semTags = TAGS_HTML.matcher(html).replaceAll(" ")
                 .replace("&quot;", "\"")
                 .replace("&#39;", "'")
                 .replace("&amp;", "&")
                 .replace("&lt;", "<")
-                .replace("&gt;", ">")
-                .replaceAll("\\s+", " ")
-                .trim();
+                .replace("&gt;", ">");
+        return ESPACOS_CONSECUTIVOS.matcher(semTags).replaceAll(" ").trim();
     }
 
     static String cortar(String texto, int limite) {

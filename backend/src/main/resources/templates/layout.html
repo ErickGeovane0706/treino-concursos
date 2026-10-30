@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--/*
-  Casco de todas as paginas publicas (RF18 RN1, RNF02). Uso:
+  Casco de todas as paginas publicas (RF18 RN1, RNF02, RNF03). Uso:
   <html th:replace="~{layout :: pagina('Título', 'Descrição', true, ${ {} }, ~{::.conteudo})}">
 
   - titulo: vai antes do nome do site no <title>; null = so o nome do site
@@ -12,10 +12,13 @@
   - urlCanonica: link canonico e og:url (PaginaPublicaAdvice); ausente nas paginas de erro
   - dadosEstruturados: mapa schema.org escrito como JSON-LD (DadosEstruturadosService)
   Nenhum anuncio aqui: cada pagina decide (RF12), e as de erro nao tem.
+  Nas paginas de alto trafego (questao.html e listagem.html), os fragmentos
+  cabecalho, topo e rodape sao incluidos diretamente para preservar o cache
+  de templates do Thymeleaf sem re-parsear ~{::.conteudo} a cada requisicao.
 */-->
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
       th:fragment="pagina(titulo, descricao, indexavel, ilhas, conteudo)">
-<head>
+<head th:fragment="cabecalho(titulo, descricao, indexavel, ilhas)">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title th:text="${titulo == null ? #site.nome : titulo + ' | ' + #site.nome}">Treino de Concursos</title>
@@ -34,63 +37,73 @@
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#EEF2F7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0F1626" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="data:,">
   <!--/* @{...}: o ResourceUrlEncodingFilter poe o hash do conteudo na URL (cache imutavel, WebConfig) */-->
   <link rel="preload" th:href="@{/fontes/public-sans-latin.woff2}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" th:href="@{/css/site.css}">
   <th:block th:replace="~{fragmentos/vite :: cabecalho(${ilhas})}"></th:block>
 </head>
 <body>
-  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+  <th:block th:fragment="topo">
+    <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
-  <header class="topo">
-    <div class="wrap">
-      <a class="marca" href="/" th:text="${#site.nome}">Treino de Concursos</a>
-      <nav aria-label="Principal">
-        <ul class="menu">
-          <li><a href="/questoes">Questões</a></li>
-          <li><a href="/meu-progresso">Meu progresso</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+    <header class="topo">
+      <div class="wrap">
+        <a class="marca" href="/" th:text="${#site.nome}">Treino de Concursos</a>
+        <nav aria-label="Principal">
+          <ul class="menu">
+            <li><a href="/questoes">Questões</a></li>
+            <li><a href="/caderno-de-erros">Caderno de erros</a></li>
+            <li><a href="/meu-progresso">Meu progresso</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+  </th:block>
 
   <main id="conteudo" class="wrap" th:insert="${conteudo}"></main>
 
-  <footer class="rodape">
-    <div class="wrap">
-      <nav aria-label="Institucional">
-        <ul>
-          <li><a href="/sobre">Sobre</a></li>
-          <li><a href="/contato">Contato</a></li>
-          <li><a href="/privacidade">Política de Privacidade</a></li>
-          <li><a href="/termos">Termos de Uso</a></li>
-          <li><a href="/cookies">Política de Cookies</a></li>
-          <!--/* So aparece com JavaScript, que e quem reabre o aviso */-->
-          <li><button type="button" class="link" data-abrir-aviso-cookies hidden>Preferências de cookies</button></li>
-        </ul>
-      </nav>
-      <p>
-        © <span th:text="${#dates.year(#dates.createNow())}">2026</span>
-        <span th:text="${#site.nome}">Treino de Concursos</span>. Banco de questões gratuito, sem cadastro.
-      </p>
-    </div>
-  </footer>
+  <th:block th:fragment="rodape(ilhas)">
+    <footer class="rodape">
+      <div class="wrap">
+        <nav aria-label="Institucional">
+          <ul>
+            <li><a href="/sobre">Sobre</a></li>
+            <li><a href="/contato">Contato</a></li>
+            <li><a href="/privacidade">Política de Privacidade</a></li>
+            <li><a href="/termos">Termos de Uso</a></li>
+            <li><a href="/cookies">Política de Cookies</a></li>
+            <!--/* So aparece com JavaScript, que e quem reabre o aviso */-->
+            <li><button type="button" class="link" data-abrir-aviso-cookies hidden>Preferências de cookies</button></li>
+          </ul>
+        </nav>
+        <p>
+          © <span th:text="${#dates.year(#dates.createNow())}">2026</span>
+          <span th:text="${#site.nome}">Treino de Concursos</span>. Banco de questões gratuito, sem cadastro.
+        </p>
+      </div>
+    </footer>
 
-  <!--/* RF18 RN2: escondido no HTML (igual para todos, cacheavel); o script mostra se nao houver escolha */-->
-  <div class="aviso-cookies" data-aviso-cookies hidden role="region" aria-label="Aviso de cookies">
-    <div class="wrap">
-      <p>
-        Guardamos seu progresso só no seu navegador e usamos cookies do Google para exibir anúncios,
-        que mantêm o site gratuito. Você aceita anúncios personalizados?
-        <a href="/cookies">Saiba mais</a>
-      </p>
-      <div class="acoes">
-        <button type="button" class="btn" data-consentimento="personalizados">Aceitar</button>
-        <button type="button" class="btn ghost" data-consentimento="nao-personalizados">Recusar</button>
+    <!--/* RF18 RN2: escondido no HTML (igual para todos, cacheavel); o script mostra se nao houver escolha */-->
+    <div class="aviso-cookies" data-aviso-cookies hidden role="region" aria-label="Aviso de cookies">
+      <div class="wrap">
+        <p>
+          Guardamos seu progresso só no seu navegador e usamos cookies do Google para exibir anúncios,
+          que mantêm o site gratuito. Você aceita anúncios personalizados?
+          <a href="/cookies">Saiba mais</a>
+        </p>
+        <div class="acoes">
+          <button type="button" class="btn" data-consentimento="personalizados">Aceitar</button>
+          <button type="button" class="btn ghost" data-consentimento="nao-personalizados">Recusar</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <th:block th:replace="~{fragmentos/vite :: scripts(${ilhas})}"></th:block>
+    <th:block th:replace="~{fragmentos/vite :: scripts(${ilhas})}"></th:block>
+    <!--/* Blocos separados: no mesmo elemento o th:replace roda antes do th:if e o ignoraria (RF12) */-->
+    <th:block th:if="${exibirAnuncios == true}">
+      <th:block th:replace="~{fragmentos/bloco-anuncio :: script}"></th:block>
+    </th:block>
+  </th:block>
 </body>
 </html>

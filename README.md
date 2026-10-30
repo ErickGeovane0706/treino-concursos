@@ -33,6 +33,7 @@ Banco de questões para concursos públicos **gratuito, sem limite diário e sem
 | [doc/banco-de-dados.md](doc/banco-de-dados.md) | Dicionário de dados, restrições e índices |
 | [doc/api.md](doc/api.md) | Convenções de rotas, JSON, erros, paginação e segurança |
 | [doc/ambiente-de-desenvolvimento.md](doc/ambiente-de-desenvolvimento.md) | Ambiente, testes e integração Spring + Vite |
+| [doc/deploy.md](doc/deploy.md) | Deploy em VPS, Docker de produção, Cloudflare, backup e monitoramento |
 | [doc/plano-de-implementacao.md](doc/plano-de-implementacao.md) | Issues em ordem, com prompts para o Claude Code |
 | [doc/prototipo.html](doc/prototipo.html) | Protótipo navegável (referência visual) |
 

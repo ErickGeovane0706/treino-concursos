@@ -22,12 +22,14 @@ public class MateriaService {
     private final MateriaRepository materiaRepository;
     private final AssuntoRepository assuntoRepository;
     private final QuestaoRepository questaoRepository;
+    private final ClassificacaoCacheService classificacaoCacheService;
 
     public MateriaService(MateriaRepository materiaRepository, AssuntoRepository assuntoRepository,
-            QuestaoRepository questaoRepository) {
+            QuestaoRepository questaoRepository, ClassificacaoCacheService classificacaoCacheService) {
         this.materiaRepository = materiaRepository;
         this.assuntoRepository = assuntoRepository;
         this.questaoRepository = questaoRepository;
+        this.classificacaoCacheService = classificacaoCacheService;
     }
 
     @Transactional(readOnly = true)
@@ -57,7 +59,9 @@ public class MateriaService {
         materia.setNome(nome);
         materia.setSlug(slug);
         materia.setAtiva(request.ativa());
-        return MateriaResponse.de(materiaRepository.save(materia));
+        Materia salva = materiaRepository.save(materia);
+        classificacaoCacheService.invalidar();
+        return MateriaResponse.de(salva);
     }
 
     @Transactional
@@ -82,6 +86,7 @@ public class MateriaService {
         }
         materia.setNome(nome);
         materia.setAtiva(request.ativa());
+        classificacaoCacheService.invalidar();
         return MateriaResponse.de(materia);
     }
 
@@ -95,6 +100,7 @@ public class MateriaService {
         assuntoRepository.soltarHierarquiaDaMateria(id);
         assuntoRepository.excluirDaMateria(id);
         materiaRepository.deleteById(id);
+        classificacaoCacheService.invalidar();
     }
 
     Materia buscarEntidade(Integer id) {

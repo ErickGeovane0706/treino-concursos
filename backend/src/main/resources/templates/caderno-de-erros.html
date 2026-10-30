@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<!--/*
+  Pagina "Caderno de erros" (RF11 RN1-RN2, US04; doc/api.md secao 2).
+  Marcada com noindex (indexavel = false) porque o conteudo depende do
+  localStorage de cada visitante.
+*/-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina('Caderno de erros',
+        'Revise as questões que você errou neste navegador, filtre por matéria e acompanhe sua evolução.',
+        false, ${ {'src/ilhas/listagem.tsx'} }, ~{::.conteudo})}">
+<body>
+  <article class="conteudo card">
+    <h1>Caderno de erros</h1>
+    <p class="texto">
+      Sempre que você erra uma questão no modo treino, ela entra automaticamente neste caderno (guardado
+      <strong>apenas neste navegador</strong>). Filtre por matéria se quiser e percorra as questões em sequência:
+      ao acertar uma questão na revisão, ela sai do caderno.
+    </p>
+
+    <div data-ilha="caderno-de-erros">
+      <noscript>
+        <p class="aviso-armazenamento">
+          Ative o JavaScript para visualizar e revisar as questões do seu caderno de erros salvo neste navegador.
+        </p>
+      </noscript>
+    </div>
+  </article>
+</body>
+</html>

@@ -17,7 +17,6 @@
   <th:block th:fragment="estilosDaEntrada(entrada)" th:with="ativos=${#vite.ativos(entrada)}">
     <th:block th:if="${ativos != null}">
       <link rel="stylesheet" th:each="css : ${ativos.estilos()}" th:href="${css}">
-      <link rel="modulepreload" th:each="js : ${ativos.preload()}" th:href="${js}">
     </th:block>
   </th:block>
 </head>
@@ -28,7 +27,10 @@
   </th:block>
 
   <th:block th:fragment="scriptDaEntrada(entrada)" th:with="ativos=${#vite.ativos(entrada)}">
-    <script type="module" th:if="${ativos != null}" th:src="${ativos.script()}"></script>
+    <th:block th:if="${ativos != null}">
+      <link rel="modulepreload" th:each="js : ${ativos.preload()}" th:href="${js}">
+      <script type="module" th:src="${ativos.script()}"></script>
+    </th:block>
   </th:block>
 </body>
 </html>

@@ -423,9 +423,14 @@ class QuestoesAdminTest extends IntegracaoTest {
                 + ", \"ano\": 2026, \"cargo\": \"Analista\", \"nivel\": \"SUPERIOR\"}"));
     }
 
-    /** Ainda nao ha API de respostas (RF17, issue #13): grava os contadores direto. */
-    private void simularRespostas(int id) {
-        jdbc.update("UPDATE questoes SET total_respostas = 10, total_acertos = 6 WHERE id_questao = ?", id);
-        jdbc.update("UPDATE alternativas SET total_marcacoes = 2 WHERE id_questao = ?", id);
+    /** Registra 10 respostas (6 acertos em B, 4 erros em A) pela API publica (RF17). */
+    private void simularRespostas(int id) throws Exception {
+        for (int i = 0; i < 10; i++) {
+            String letra = i < 6 ? "B" : "A";
+            mockMvc.perform(post("/api/questoes/" + id + "/respostas")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"letra\": \"" + letra + "\"}"))
+                    .andExpect(status().isAccepted());
+        }
     }
 }

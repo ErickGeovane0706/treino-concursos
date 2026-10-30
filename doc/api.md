@@ -86,6 +86,7 @@ Regras das páginas:
 | Método e caminho | Uso | RF |
 |---|---|---|
 | `GET /api/questoes/ids?materia=&assunto=&banca=&orgao=&ano=&nivel=&depoisDe=&limite=` | Ids publicados do filtro, em ordem crescente (usado por "Continuar" e "Ocultar resolvidas") | RF07, RF10 |
+| `GET /api/questoes/resumos?ids=1,2,3` | Dados mínimos das questões publicadas informadas, em ordem crescente de id (usado pelo caderno de erros) | RF11 |
 | `GET /api/questoes/{id}/estatisticas` | `% de acerto` e `% por alternativa` (só com 30+ respostas) | RF17 |
 | `POST /api/questoes/{id}/respostas` | Registra a resposta anônima `{ "letra": "C" }` → `202 Accepted` | RF17 |
 | `POST /api/questoes/{id}/reportes` | Registra reporte `{ "motivo": "GABARITO_ERRADO", "descricao": "..." }` → `201` | RF16 |

@@ -60,6 +60,16 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.detail").value("Duas alternativas corretas."));
     }
 
+    @Test
+    void deveRetornar429QuandoLimiteDeRequisicoesPorIpExcedido() throws Exception {
+        mockMvc.perform(get("/api/teste/limite-requisicoes"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Limite de requisições excedido"))
+                .andExpect(jsonPath("$.detail")
+                        .value("Muitas requisições deste endereço em pouco tempo. Tente novamente mais tarde."));
+    }
+
     /** Campo obrigatorio vazio: passa no @NotNull, mas falha no @NotBlank. */
     @Test
     void deveRetornar400ComMensagemFixaQuandoFalhaValidacao() throws Exception {
@@ -93,6 +103,12 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/api/teste/regra-negocio-violada")
         public void regraNegocioViolada() {
             throw new RegraNegocioException("Duas alternativas corretas.");
+        }
+
+        @GetMapping("/api/teste/limite-requisicoes")
+        public void limiteRequisicoes() {
+            throw new LimiteRequisicoesException(
+                    "Muitas requisições deste endereço em pouco tempo. Tente novamente mais tarde.");
         }
 
         @PostMapping("/api/teste/validacao")

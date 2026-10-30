@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<!--/*
+  Fragmento Thymeleaf bloco-anuncio (RF12 RN1-RN5, RNF03, RNF07, US15).
+  - Altura reservada fixa para nunca empurrar botoes quando o anuncio carregar (CLS <= 0,1).
+  - Rotulo obrigatorio "Publicidade" e visual distinto dos botoes do site (RF12 RN3, RNF07).
+  - 100 px de distancia minima de qualquer elemento clicavel (RF12 RN2, RNF07).
+  - Script e tag <ins class="adsbygoogle"> renderizados somente quando ADS_ENABLED=true (RF12 RN5).
+  - Respeita a escolha do aviso de cookies (consentimento-anuncios): personalizados vs nao-personalizados (RF18 RN2).
+  - Carrega o script externo do AdSense apos a pintura inicial / primeira interacao para preservar LCP e INP/TBT (RNF03).
+*/-->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <th:block th:fragment="script">
+    <th:block th:if="${#site.adsEnabled}">
+      <script th:inline="javascript"
+              data-adsense-script
+              th:attr="data-adsense-src=${#site.scriptAdsenseUrl}">
+        (function () {
+          (window.adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = /*[[${#site.anunciosPersonalizados ? 0 : 1}]]*/ 1;
+          var url = /*[[${#site.scriptAdsenseUrl}]]*/ '';
+          if (!url) return;
+          var carregado = false;
+          function carregarAdsense() {
+            if (carregado) return;
+            carregado = true;
+            var s = document.createElement('script');
+            s.async = true;
+            s.crossOrigin = 'anonymous';
+            s.src = url;
+            document.body.appendChild(s);
+          }
+          ['pointerdown', 'keydown', 'touchstart', 'scroll', 'mousemove'].forEach(function (ev) {
+            window.addEventListener(ev, carregarAdsense, { once: true, passive: true });
+          });
+          window.addEventListener('load', function () {
+            setTimeout(carregarAdsense, 8000);
+          }, { once: true });
+        })();
+      </script>
+    </th:block>
+  </th:block>
+</head>
+<body>
+  <aside th:fragment="bloco-anuncio(posicao, slot)"
+         th:class="${posicao == 'lateral'
+           ? 'bloco-anuncio bloco-anuncio-lateral'
+           : 'bloco-anuncio bloco-anuncio-questao espaco-anuncio-questao'}"
+         th:attr="data-bloco-anuncio=${posicao},
+                  data-espaco-anuncio=${posicao == 'questao' ? 'true' : null},
+                  data-ads-enabled=${#site.adsEnabled},
+                  data-ad-client=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
+                  data-ad-slot=${#site.adsEnabled and !#strings.isEmpty(slot) ? slot : null},
+                  data-consentimento-atual=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"
+         aria-label="Publicidade">
+    <span class="rotulo-anuncio">Publicidade</span>
+    <div class="area-anuncio" data-area-anuncio>
+      <ins th:if="${#site.adsEnabled}"
+           class="adsbygoogle"
+           style="display:block"
+           th:attr="data-ad-client=${!#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
+                    data-ad-slot=${!#strings.isEmpty(slot) ? slot : null},
+                    data-ad-format=${posicao == 'lateral' ? 'rectangle' : 'horizontal'},
+                    data-full-width-responsive='false',
+                    data-npa=${#site.anunciosNaoPersonalizados ? '1' : null},
+                    data-consentimento-aplicado=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"></ins>
+    </div>
+  </aside>
+</body>
+</html>

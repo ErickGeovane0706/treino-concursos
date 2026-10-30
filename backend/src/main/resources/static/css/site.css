@@ -419,12 +419,26 @@ h1 {
   font-size: 15px;
 }
 
+.opt-texto {
+  flex: 1;
+  min-width: 0;
+}
+
 .opt-texto p:first-child {
   margin-top: 0;
 }
 
 .opt-texto p:last-child {
   margin-bottom: 0;
+}
+
+.opt-percentual {
+  flex: 0 0 auto;
+  align-self: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .opt:disabled {
@@ -487,6 +501,25 @@ h1 {
   margin-bottom: 6px;
 }
 
+.fb-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin-bottom: 6px;
+}
+
+.fb-topo strong {
+  margin-bottom: 0;
+}
+
+.estatistica-acertos {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 .fb.ok strong {
   color: var(--ok);
 }
@@ -503,11 +536,105 @@ h1 {
   margin-bottom: 0;
 }
 
-/* RF12 RN2: 100 px de distancia entre o espaco de anuncio e os elementos clicaveis */
-.espaco-anuncio-questao {
-  margin-top: 100px;
-  margin-bottom: 100px;
+/* RF12 RN1-RN3, RNF07: blocos de publicidade com altura reservada fixa (CLS <= 0,1),
+   rotulo "Publicidade", visual distinto dos botoes e >= 100 px de distancia de elementos clicaveis */
+.layout-questao {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.bloco-anuncio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--ad-bg);
+  border: 1.5px dashed var(--ad-line);
+  border-radius: 10px;
+  color: var(--muted);
+  text-align: center;
+  cursor: default;
+  overflow: hidden;
+  contain: layout paint;
+}
+
+.rotulo-anuncio {
+  display: block;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  user-select: none;
+}
+
+.area-anuncio {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.espaco-anuncio-questao,
+.bloco-anuncio-questao {
+  margin-top: 104px;
+  margin-bottom: 104px;
+  width: 100%;
+  min-height: 120px;
+  height: 120px;
+  max-height: 120px;
+}
+
+.bloco-anuncio-questao .area-anuncio {
   min-height: 90px;
+  height: 90px;
+  max-height: 90px;
+}
+
+.bloco-anuncio-questao .adsbygoogle {
+  width: 100%;
+  height: 90px;
+  max-height: 90px;
+}
+
+/* RF12 RN1: bloco lateral somente em telas com largura >= 1024 px */
+.bloco-anuncio-lateral {
+  display: none;
+  width: 300px;
+  min-height: 280px;
+  height: 280px;
+  max-height: 280px;
+  margin-top: 104px;
+  margin-bottom: 104px;
+}
+
+.bloco-anuncio-lateral .area-anuncio {
+  width: 100%;
+  min-height: 250px;
+  height: 250px;
+  max-height: 250px;
+}
+
+.bloco-anuncio-lateral .adsbygoogle {
+  width: 300px;
+  height: 250px;
+  max-height: 250px;
+}
+
+@media (min-width: 1024px) {
+  .layout-questao {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    column-gap: 104px;
+  }
+
+  .bloco-anuncio-lateral {
+    display: flex;
+  }
 }
 
 .acoes-treino {
@@ -519,6 +646,86 @@ h1 {
   width: 100%;
   font-size: 18px;
   padding: 16px 20px;
+}
+
+/* ---------- reporte de erro na questao (RF16, US07) ---------- */
+
+.secao-reporte {
+  margin-top: 20px;
+}
+
+.btn-reportar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-reportar:hover {
+  border-color: var(--brand);
+  color: var(--ink);
+}
+
+.form-reporte {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.campo-reporte {
+  display: grid;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.campo-reporte select,
+.campo-reporte textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 400 15px/1.45 inherit;
+}
+
+.acoes-reporte {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.aviso-reporte-enviado {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--ok-bg);
+  color: var(--ok);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.erro-reporte {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--bad-bg);
+  color: var(--bad);
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .navegacao-questao {
@@ -569,11 +776,13 @@ h1 {
   border: 1.5px solid var(--line);
   background: var(--surface);
   color: var(--ink);
+  font-family: inherit;
   font-weight: 600;
   font-size: 15px;
   padding: 8px 16px;
   border-radius: 999px;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .chip:hover {
@@ -581,6 +790,7 @@ h1 {
 }
 
 .chip[aria-current='page'],
+.chip[aria-pressed='true'],
 .chip[data-ativo='true'] {
   background: var(--brand);
   border-color: var(--brand);
@@ -801,6 +1011,23 @@ h1 {
   border-radius: 12px;
   background: var(--bg);
   border: 1px solid var(--line);
+}
+
+.painel-caderno-erros {
+  margin-top: 20px;
+}
+
+.resumo-caderno {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.aviso-caderno-removida {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ok);
 }
 
 /* ---------- paginas de erro (sem anuncio) ---------- */

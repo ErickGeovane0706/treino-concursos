@@ -1,115 +1,129 @@
 <!DOCTYPE html>
 <!--/*
   Listagens de questoes com ordem fixa por id crescente e paginacao por cursor
-  (?depoisDe=) (RF07 RN1-RN5, US02). Lista vazia recebe noindex (RF09 RN3) e fica fora do sitemap.
+  (?depoisDe=) (RF07 RN1-RN5, US02, RNF03). Lista vazia recebe noindex (RF09 RN3) e fica fora do sitemap.
+  Inclui direto os fragmentos do layout (cabecalho, topo, rodape), sem ~{::.conteudo},
+  para aproveitar o cache de templates do Thymeleaf em producao (RNF03).
 */-->
-<html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout :: pagina(${listagem.tituloPagina}, ${listagem.metaDescricao}, ${!#lists.isEmpty(listagem.questoes)}, ${ {'src/ilhas/listagem.tsx'} }, ~{::.conteudo})}">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabecalho(${listagem.tituloPagina}, ${listagem.metaDescricao}, ${!#lists.isEmpty(listagem.questoes)}, ${ {'src/ilhas/listagem.tsx'} })}"></head>
 <body>
-  <section class="conteudo card listagem"
-           data-ilha="listagem"
-           th:attr="data-filtro=${listagem.filtroAtivo != null ? listagem.filtroAtivo : 'todas'},
-                    data-materia=${listagem.slugMateriaAtiva},
-                    data-assunto=${listagem.slugAssuntoAtivo}">
-    <nav class="trilha" aria-label="Trilha de navegação" th:if="${listagem.slugMateriaAtiva != null}">
-      <a href="/questoes">Todas as questões</a>
-      <span aria-hidden="true">›</span>
-      <a th:if="${listagem.slugAssuntoAtivo != null}"
-         th:href="@{/questoes/{m}(m=${listagem.slugMateriaAtiva})}"
-         th:text="${listagem.nomeMateriaAtiva}">Português</a>
-      <span th:if="${listagem.slugAssuntoAtivo == null}"
-            th:text="${listagem.nomeMateriaAtiva}">Português</span>
-      <th:block th:if="${listagem.slugAssuntoAtivo != null}">
+  <th:block th:replace="~{layout :: topo}"></th:block>
+
+  <main id="conteudo" class="wrap">
+    <section class="conteudo card listagem"
+             data-ilha="listagem"
+             th:attr="data-filtro=${listagem.filtroAtivo != null ? listagem.filtroAtivo : 'todas'},
+                      data-materia=${listagem.slugMateriaAtiva},
+                      data-assunto=${listagem.slugAssuntoAtivo}">
+      <nav class="trilha" aria-label="Trilha de navegação" th:if="${listagem.slugMateriaAtiva != null}">
+        <a href="/questoes">Todas as questões</a>
         <span aria-hidden="true">›</span>
-        <span th:text="${listagem.nomeAssuntoAtivo}">Concordância verbal</span>
-      </th:block>
-    </nav>
-
-    <h1 th:text="${listagem.tituloH1}">Todas as questões</h1>
-
-    <nav aria-label="Filtrar por matéria" th:if="${!#lists.isEmpty(listagem.materias)}">
-      <ul class="filters">
-        <li>
-          <a class="chip"
-             href="/questoes"
-             th:attr="aria-current=${listagem.slugMateriaAtiva == null ? 'page' : null}">Todas</a>
-        </li>
-        <li th:each="mat : ${listagem.materias}">
-          <a class="chip"
-             th:href="${mat.url}"
-             th:text="${mat.nome}"
-             th:attr="aria-current=${mat.ativo and listagem.slugAssuntoAtivo == null ? 'page' : null},
-                      data-ativo=${mat.ativo}">Português</a>
-        </li>
-      </ul>
-    </nav>
-
-    <nav aria-label="Filtrar por assunto" th:if="${!#lists.isEmpty(listagem.assuntos)}">
-      <ul class="filters filters-assuntos">
-        <li>
-          <a class="chip"
-             th:href="@{/questoes/{m}(m=${listagem.slugMateriaAtiva})}"
-             th:attr="aria-current=${listagem.slugAssuntoAtivo == null ? 'page' : null}">Todos os assuntos</a>
-        </li>
-        <li th:each="ass : ${listagem.assuntos}">
-          <a class="chip"
-             th:href="${ass.url}"
-             th:text="${ass.nome}"
-             th:attr="aria-current=${ass.ativo ? 'page' : null},
-                      data-ativo=${ass.ativo}">Crase</a>
-        </li>
-      </ul>
-    </nav>
-
-    <!--/* RF07 RN5: lista vazia sem anuncio e com sugestao de remover filtros */-->
-    <div class="vazio-listagem texto" th:if="${#lists.isEmpty(listagem.questoes)}" data-lista-vazia>
-      <p>Nenhuma questão publicada foi encontrada para este filtro.</p>
-      <p>Experimente remover filtros ou voltar para a listagem geral.</p>
-      <div class="acoes">
-        <a class="btn ghost"
-           th:if="${listagem.slugAssuntoAtivo != null}"
+        <a th:if="${listagem.slugAssuntoAtivo != null}"
            th:href="@{/questoes/{m}(m=${listagem.slugMateriaAtiva})}"
-           th:text="'Ver todas de ' + ${listagem.nomeMateriaAtiva}">Ver todas da matéria</a>
-        <a class="btn" href="/questoes">Ver todas as questões</a>
+           th:text="${listagem.nomeMateriaAtiva}">Português</a>
+        <span th:if="${listagem.slugAssuntoAtivo == null}"
+              th:text="${listagem.nomeMateriaAtiva}">Português</span>
+        <th:block th:if="${listagem.slugAssuntoAtivo != null}">
+          <span aria-hidden="true">›</span>
+          <span th:text="${listagem.nomeAssuntoAtivo}">Concordância verbal</span>
+        </th:block>
+      </nav>
+
+      <h1 th:text="${listagem.tituloH1}">Todas as questões</h1>
+
+      <nav aria-label="Filtrar por matéria" th:if="${!#lists.isEmpty(listagem.materias)}">
+        <ul class="filters">
+          <li>
+            <a class="chip" th:if="${listagem.slugMateriaAtiva == null}" href="/questoes" aria-current="page">Todas</a>
+            <a class="chip" th:if="${listagem.slugMateriaAtiva != null}" href="/questoes">Todas</a>
+          </li>
+          <li th:each="mat : ${listagem.materias}">
+            <a class="chip" th:if="${mat.ativo and listagem.slugAssuntoAtivo == null}"
+               th:href="${mat.url}" th:text="${mat.nome}"
+               aria-current="page" data-ativo="true">Português</a>
+            <a class="chip" th:if="${mat.ativo and listagem.slugAssuntoAtivo != null}"
+               th:href="${mat.url}" th:text="${mat.nome}"
+               data-ativo="true">Português</a>
+            <a class="chip" th:unless="${mat.ativo}"
+               th:href="${mat.url}" th:text="${mat.nome}"
+               data-ativo="false">Português</a>
+          </li>
+        </ul>
+      </nav>
+
+      <nav aria-label="Filtrar por assunto" th:if="${!#lists.isEmpty(listagem.assuntos)}">
+        <ul class="filters filters-assuntos">
+          <li>
+            <a class="chip" th:if="${listagem.slugAssuntoAtivo == null}"
+               th:href="@{/questoes/{m}(m=${listagem.slugMateriaAtiva})}"
+               aria-current="page">Todos os assuntos</a>
+            <a class="chip" th:if="${listagem.slugAssuntoAtivo != null}"
+               th:href="@{/questoes/{m}(m=${listagem.slugMateriaAtiva})}">Todos os assuntos</a>
+          </li>
+          <li th:each="ass : ${listagem.assuntos}">
+            <a class="chip" th:if="${ass.ativo}"
+               th:href="${ass.url}" th:text="${ass.nome}"
+               aria-current="page" data-ativo="true">Crase</a>
+            <a class="chip" th:unless="${ass.ativo}"
+               th:href="${ass.url}" th:text="${ass.nome}"
+               data-ativo="false">Crase</a>
+          </li>
+        </ul>
+      </nav>
+
+      <!--/* RF07 RN5: lista vazia sem anuncio e com sugestao de remover filtros */-->
+      <div class="vazio-listagem texto" th:if="${#lists.isEmpty(listagem.questoes)}" data-lista-vazia>
+        <p>Nenhuma questão publicada foi encontrada para este filtro.</p>
+        <p>Experimente remover filtros ou voltar para a listagem geral.</p>
+        <div class="acoes">
+          <a class="btn ghost"
+             th:if="${listagem.slugAssuntoAtivo != null}"
+             th:href="@{/questoes/{m}(m=${listagem.slugMateriaAtiva})}"
+             th:text="'Ver todas de ' + ${listagem.nomeMateriaAtiva}">Ver todas da matéria</a>
+          <a class="btn" href="/questoes">Ver todas as questões</a>
+        </div>
       </div>
-    </div>
 
-    <th:block th:if="${!#lists.isEmpty(listagem.questoes)}">
-      <div data-controles-listagem></div>
+      <th:block th:if="${!#lists.isEmpty(listagem.questoes)}">
+        <div data-controles-listagem></div>
 
-      <ol class="lista-questoes" data-lista-questoes>
-        <li class="item-questao"
-            th:each="q : ${listagem.questoes}"
-            th:attr="data-id-questao=${q.id}">
-          <div class="meta">
-            <span class="classificacao-item">
-              <strong th:text="'#' + ${q.id}">#1</strong>
-              <span>·</span>
-              <span th:text="${q.nomeMateria}">Português</span>
-              <th:block th:if="${q.nomeAssunto != null}">
-                <span aria-hidden="true">›</span>
-                <span th:text="${q.nomeAssunto}">Concordância verbal</span>
-              </th:block>
-            </span>
-            <span class="origem" th:text="${q.fonte}">Questão autoral</span>
-          </div>
-          <p class="resumo-enunciado">
-            <a class="link-questao" th:href="${q.url}" th:text="${q.resumoEnunciado}">Enunciado da questão</a>
-          </p>
-          <div class="avisos-item" th:if="${q.anulada or q.desatualizada}">
-            <span class="tag-aviso tag-anulada" th:if="${q.anulada}">Anulada</span>
-            <span class="tag-aviso" th:if="${q.desatualizada}">Desatualizada</span>
-          </div>
-        </li>
-      </ol>
+        <ol class="lista-questoes" data-lista-questoes>
+          <li class="item-questao"
+              th:each="q : ${listagem.questoes}"
+              th:attr="data-id-questao=${q.id}">
+            <div class="meta">
+              <span class="classificacao-item">
+                <strong th:text="'#' + ${q.id}">#1</strong>
+                <span>·</span>
+                <span th:text="${q.nomeMateria}">Português</span>
+                <th:block th:if="${q.nomeAssunto != null}">
+                  <span aria-hidden="true">›</span>
+                  <span th:text="${q.nomeAssunto}">Concordância verbal</span>
+                </th:block>
+              </span>
+              <span class="origem" th:text="${q.fonte}">Questão autoral</span>
+            </div>
+            <p class="resumo-enunciado">
+              <a class="link-questao" th:href="${q.url}" th:text="${q.resumoEnunciado}">Enunciado da questão</a>
+            </p>
+            <div class="avisos-item" th:if="${q.anulada or q.desatualizada}">
+              <span class="tag-aviso tag-anulada" th:if="${q.anulada}">Anulada</span>
+              <span class="tag-aviso" th:if="${q.desatualizada}">Desatualizada</span>
+            </div>
+          </li>
+        </ol>
 
-      <div class="paginacao-cursor" th:if="${listagem.proximaPaginaUrl != null}">
-        <a class="btn btn-bloco"
-           th:href="${listagem.proximaPaginaUrl}"
-           rel="next"
-           data-proximo-cursor>Mais questões →</a>
-      </div>
-    </th:block>
-  </section>
+        <div class="paginacao-cursor" th:if="${listagem.proximaPaginaUrl != null}">
+          <a class="btn btn-bloco"
+             th:href="${listagem.proximaPaginaUrl}"
+             rel="next"
+             data-proximo-cursor>Mais questões →</a>
+        </div>
+      </th:block>
+    </section>
+  </main>
+
+  <th:block th:replace="~{layout :: rodape(${ {'src/ilhas/listagem.tsx'} })}"></th:block>
 </body>
 </html>

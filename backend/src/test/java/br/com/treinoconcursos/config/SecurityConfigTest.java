@@ -11,10 +11,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -75,6 +78,14 @@ class SecurityConfigTest {
                 .andExpect(status().isForbidden());
     }
 
+    /** doc/api.md secao 9: os dois POST publicos (respostas e reportes) sao isentos de CSRF. */
+    @Test
+    void postPublicoDeRespostasEhIsentoDeCsrfENaoGravaCookieNoVisitante() throws Exception {
+        mockMvc.perform(post("/api/questoes/1/respostas"))
+                .andExpect(status().isOk())
+                .andExpect(cookie().doesNotExist("XSRF-TOKEN"));
+    }
+
     /**
      * A SPA precisa receber o cookie XSRF-TOKEN antes do primeiro POST (o login).
      * Fica aqui porque o csrf() dos testes de integracao troca o repositorio de
@@ -95,6 +106,36 @@ class SecurityConfigTest {
                 .andExpect(request().sessionAttributeDoesNotExist("SPRING_SECURITY_SAVED_REQUEST"));
     }
 
+    /**
+     * RNF01: cabecalhos de seguranca obrigatorios (CSP compativel com o AdSense,
+     * X-Content-Type-Options, Referrer-Policy e Strict-Transport-Security).
+     */
+    @Test
+    void enviaCabecalhosDeSegurancaRnf01() throws Exception {
+        mockMvc.perform(get("/api/publico"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("Referrer-Policy", "strict-origin-when-cross-origin"))
+                .andExpect(header().string("Strict-Transport-Security", "max-age=31536000 ; includeSubDomains"))
+                .andExpect(header().string("Content-Security-Policy",
+                        containsString("default-src 'self'")))
+                .andExpect(header().string("Content-Security-Policy",
+                        containsString("https://pagead2.googlesyndication.com")))
+                .andExpect(header().string("Content-Security-Policy",
+                        containsString("object-src 'none'")));
+    }
+
+    @Test
+    void cspIncluiServidorViteQuandoEmDesenvolvimento() {
+        String cspProd = SecurityConfig.politicaCsp("");
+        String cspDev = SecurityConfig.politicaCsp("http://localhost:5173");
+
+        assertThat(cspProd).doesNotContain("localhost:5173");
+        assertThat(cspDev)
+                .contains("http://localhost:5173")
+                .contains("ws://localhost:5173");
+    }
+
     @RestController
     static class ControllerFalso {
 
@@ -103,7 +144,7 @@ class SecurityConfigTest {
             return "ok";
         }
 
-        @PostMapping("/api/publico")
+        @PostMapping({"/api/publico", "/api/questoes/1/respostas"})
         public String publicoPost() {
             return "ok";
         }

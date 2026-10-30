@@ -52,7 +52,10 @@ export function QuestoesLista() {
   const [listaMaterias, setListaMaterias] = useState<Materia[]>([]);
 
   useEffect(() => {
-    materias.listar('', 0, 500).then((p) => setListaMaterias(p.content));
+    materias
+      .listar('', 0, 500)
+      .then((p) => setListaMaterias(p.content))
+      .catch(() => undefined);
   }, []);
 
   const carregar = useCallback(
@@ -128,7 +131,31 @@ export function QuestaoFormRota() {
   return <QuestaoForm key={local.key} id={id ?? 'nova'} navegacao={(local.state as EstadoNavegacao | null) ?? {}} />;
 }
 
-function QuestaoForm({ id, navegacao }: { id: string; navegacao: EstadoNavegacao }) {
+/**
+ * Editor de questao reutilizado ao lado da fila de reportes (US12, RF16),
+ * permitindo corrigir a questao sem trocar de tela.
+ */
+export function QuestaoEditorPainel({
+  idQuestao,
+  aoAtualizar,
+}: {
+  idQuestao: number;
+  aoAtualizar?: (questao: Questao) => void;
+}) {
+  return <QuestaoForm key={idQuestao} id={String(idQuestao)} navegacao={{}} embutido aoAtualizar={aoAtualizar} />;
+}
+
+function QuestaoForm({
+  id,
+  navegacao,
+  embutido = false,
+  aoAtualizar,
+}: {
+  id: string;
+  navegacao: EstadoNavegacao;
+  embutido?: boolean;
+  aoAtualizar?: (questao: Questao) => void;
+}) {
   const nova = id === 'nova';
   const navegar = useNavigate();
   const [estado, setEstado] = useState<EstadoQuestao>(() => estadoInicial(navegacao.classificacao));
@@ -145,8 +172,14 @@ function QuestaoForm({ id, navegacao }: { id: string; navegacao: EstadoNavegacao
     setEstado((e) => ({ ...e, [campo]: valor }));
 
   useEffect(() => {
-    materias.listar('', 0, 500).then((p) => setListaMaterias(p.content));
-    provas.listar('', 0, 500).then((p) => setListaProvas(p.content));
+    materias
+      .listar('', 0, 500)
+      .then((p) => setListaMaterias(p.content))
+      .catch(() => undefined);
+    provas
+      .listar('', 0, 500)
+      .then((p) => setListaProvas(p.content))
+      .catch(() => undefined);
     if (nova) return;
     questoes
       .buscar(Number(id))
@@ -162,7 +195,10 @@ function QuestaoForm({ id, navegacao }: { id: string; navegacao: EstadoNavegacao
       setListaAssuntos([]);
       return;
     }
-    assuntos.listar(Number(estado.idMateria)).then((a) => setListaAssuntos(ordenarComoArvore(a)));
+    assuntos
+      .listar(Number(estado.idMateria))
+      .then((a) => setListaAssuntos(ordenarComoArvore(a)))
+      .catch(() => undefined);
   }, [estado.idMateria]);
 
   // Previa com o mesmo MarkdownService das paginas publicas, sem chamar a API a cada tecla
@@ -224,6 +260,7 @@ function QuestaoForm({ id, navegacao }: { id: string; navegacao: EstadoNavegacao
         return;
       }
       setQuestao(salva);
+      aoAtualizar?.(salva);
       return 'Questão salva.';
     });
   }
@@ -231,7 +268,7 @@ function QuestaoForm({ id, navegacao }: { id: string; navegacao: EstadoNavegacao
   function aoTeclar(evento: KeyboardEvent) {
     if (evento.key === 'Enter' && (evento.ctrlKey || evento.metaKey)) {
       evento.preventDefault();
-      salvar(evento.shiftKey);
+      salvar(!embutido && evento.shiftKey);
       return;
     }
     const letra = letraDoAtalho(evento, letrasDo(estado.tipo, estado.quantidade));
@@ -243,7 +280,9 @@ function QuestaoForm({ id, navegacao }: { id: string; navegacao: EstadoNavegacao
 
   function acaoDoCiclo(acao: (id: number) => Promise<Questao>, mensagem: string) {
     executar(async () => {
-      setQuestao(await acao(Number(id)));
+      const atualizada = await acao(Number(id));
+      setQuestao(atualizada);
+      aoAtualizar?.(atualizada);
       return mensagem;
     });
   }
@@ -252,9 +291,11 @@ function QuestaoForm({ id, navegacao }: { id: string; navegacao: EstadoNavegacao
 
   return (
     <section className="space-y-4">
-      <Link to="/questoes" className="text-sm text-blue-700 underline">
-        ← Voltar
-      </Link>
+      {!embutido && (
+        <Link to="/questoes" className="text-sm text-blue-700 underline">
+          ← Voltar
+        </Link>
+      )}
       <div className="flex flex-wrap items-baseline gap-3">
         <h2 className="text-xl font-semibold">{nova ? 'Nova questão' : `Questão #${id}`}</h2>
         {questao && (
@@ -271,7 +312,7 @@ function QuestaoForm({ id, navegacao }: { id: string; navegacao: EstadoNavegacao
           salvar(false);
         }}
         onKeyDown={aoTeclar}
-        className="grid gap-6 lg:grid-cols-2"
+        className={embutido ? 'space-y-4' : 'grid gap-6 lg:grid-cols-2'}
       >
         <div className="space-y-4">
           <Selecao
@@ -395,16 +436,18 @@ function QuestaoForm({ id, navegacao }: { id: string; navegacao: EstadoNavegacao
             <Botao type="submit" disabled={ocupado}>
               {ocupado ? 'Salvando...' : 'Salvar'}
             </Botao>
-            <button
-              type="button"
-              disabled={ocupado}
-              onClick={() => salvar(true)}
-              className="rounded border border-blue-700 px-4 py-2 font-medium text-blue-700 disabled:opacity-60"
-            >
-              Salvar e cadastrar outra
-            </button>
+            {!embutido && (
+              <button
+                type="button"
+                disabled={ocupado}
+                onClick={() => salvar(true)}
+                className="rounded border border-blue-700 px-4 py-2 font-medium text-blue-700 disabled:opacity-60"
+              >
+                Salvar e cadastrar outra
+              </button>
+            )}
           </div>
-          <p className="text-xs text-slate-500">Ctrl+Enter salva; Ctrl+Shift+Enter salva e abre uma nova.</p>
+          {!embutido && <p className="text-xs text-slate-500">Ctrl+Enter salva; Ctrl+Shift+Enter salva e abre uma nova.</p>}
         </div>
 
         <aside aria-label="Pré-visualização" className="space-y-2 lg:sticky lg:top-4 lg:self-start">
@@ -506,8 +549,14 @@ function NovaProvaRapida({ aoCriar }: { aoCriar: (prova: Prova) => void }) {
 
   useEffect(() => {
     if (!aberto) return;
-    bancas.listar('', 0, 500).then((p) => setListaBancas(p.content));
-    orgaos.listar('', 0, 500).then((p) => setListaOrgaos(p.content));
+    bancas
+      .listar('', 0, 500)
+      .then((p) => setListaBancas(p.content))
+      .catch(() => undefined);
+    orgaos
+      .listar('', 0, 500)
+      .then((p) => setListaOrgaos(p.content))
+      .catch(() => undefined);
   }, [aberto]);
 
   if (!aberto) {

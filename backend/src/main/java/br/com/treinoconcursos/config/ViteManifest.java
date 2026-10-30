@@ -15,7 +15,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Diz ao Thymeleaf quais arquivos carregar para uma ilha React
@@ -38,6 +40,7 @@ public class ViteManifest {
 
     private final String servidorDev;
     private final JsonNode manifest;
+    private final Map<String, Ativos> cacheAtivos = new ConcurrentHashMap<>();
 
     @Autowired
     public ViteManifest(@Value("${app.vite-dev-server:}") String servidorDev) {
@@ -79,6 +82,10 @@ public class ViteManifest {
         if (dev()) {
             return new Ativos(servidorDev + "/" + entrada, List.of(), List.of());
         }
+        Ativos emCache = cacheAtivos.get(entrada);
+        if (emCache != null) {
+            return emCache;
+        }
         JsonNode chunk = manifest == null ? null : manifest.get(entrada);
         if (chunk == null) {
             log.warn("Entrada {} não está no manifest do Vite: rode npm run build.", entrada);
@@ -87,7 +94,9 @@ public class ViteManifest {
         Set<String> estilos = new LinkedHashSet<>();
         Set<String> preload = new LinkedHashSet<>();
         coletar(chunk, estilos, preload, new LinkedHashSet<>());
-        return new Ativos("/" + chunk.get("file").asString(), List.copyOf(estilos), List.copyOf(preload));
+        Ativos resolvido = new Ativos("/" + chunk.get("file").asString(), List.copyOf(estilos), List.copyOf(preload));
+        cacheAtivos.put(entrada, resolvido);
+        return resolvido;
     }
 
     /** CSS e imports estaticos, seguindo a arvore de imports sem repetir chunk. */

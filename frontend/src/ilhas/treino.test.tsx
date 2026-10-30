@@ -5,10 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CHAVE_PROGRESSO,
   definirOcultarResolvidas,
+  estaNoCadernoDeErros,
   lerProgresso,
   registrarResposta,
 } from '../progresso/progresso';
 import {
+  IlhaReporte,
   IlhaTreino,
   iniciarIlhaTreino,
   lerDadosTreino,
@@ -267,6 +269,204 @@ describe('Ilha de treino da questão', () => {
       getItemSpy.mockRestore();
       setItemSpy.mockRestore();
     }
+  });
+
+  it('envia POST /api/questoes/{id}/respostas só na primeira resposta do navegador e exibe "62% acertaram" e % por alternativa com 30+ respostas (RF17 RN1–RN3)', async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/respostas')) {
+        return new Response(null, { status: 202 });
+      }
+      if (url.endsWith('/estatisticas')) {
+        return new Response(
+          JSON.stringify({
+            disponivel: true,
+            totalRespostas: 100,
+            percentualAcertos: 62,
+            alternativas: [
+              { letra: 'A', percentual: 20 },
+              { letra: 'B', percentual: 62 },
+              { letra: 'C', percentual: 18 },
+            ],
+          }),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    });
+
+    render(<IlhaTreino dados={criarDadosPadrao()} />);
+
+    // Primeira resposta neste navegador -> envia POST e busca estatisticas
+    await user.click(screen.getAllByRole('button')[1]); // B
+
+    expect(await screen.findByText('62% acertaram')).toBeInTheDocument();
+    expect(document.querySelector('[data-estatistica-alternativa="A"]')).toHaveTextContent('20%');
+    expect(document.querySelector('[data-estatistica-alternativa="B"]')).toHaveTextContent('62%');
+    expect(document.querySelector('[data-estatistica-alternativa="C"]')).toHaveTextContent('18%');
+
+    const chamadasPostAntes = fetchSpy.mock.calls.filter(([u]) => String(u).endsWith('/respostas'));
+    expect(chamadasPostAntes).toHaveLength(1);
+    expect(chamadasPostAntes[0][0]).toBe('/api/questoes/42/respostas');
+    expect(chamadasPostAntes[0][1]).toMatchObject({
+      method: 'POST',
+      body: JSON.stringify({ letra: 'B' }),
+    });
+
+    // Clicar em "Refazer" e responder de novo nao envia novo POST (RF17 RN2)
+    await user.click(screen.getByRole('button', { name: 'Refazer' }));
+    expect(screen.queryByText('62% acertaram')).toBeNull();
+
+    await user.click(screen.getAllByRole('button')[0]); // A
+    expect(await screen.findByText('62% acertaram')).toBeInTheDocument();
+
+    const chamadasPostDepois = fetchSpy.mock.calls.filter(([u]) => String(u).endsWith('/respostas'));
+    expect(chamadasPostDepois).toHaveLength(1);
+  });
+
+  it('não envia POST /api/questoes/{id}/respostas quando a questão já constava como resolvida no navegador (RF17 RN2)', async () => {
+    const user = userEvent.setup();
+    registrarResposta(42, 'A', false, 'direito-constitucional');
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          disponivel: false,
+          totalRespostas: 12,
+          percentualAcertos: null,
+          alternativas: [],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    render(<IlhaTreino dados={criarDadosPadrao()} />);
+    await user.click(screen.getAllByRole('button')[1]); // B
+
+    const chamadasPost = fetchSpy.mock.calls.filter(([u]) => String(u).endsWith('/respostas'));
+    expect(chamadasPost).toHaveLength(0);
+    // Com menos de 30 respostas, nao exibe percentual (RF17 RN3)
+    expect(document.querySelector('[data-estatistica-acertos]')).toBeNull();
+    expect(document.querySelector('[data-estatistica-alternativa]')).toBeNull();
+  });
+
+  it('abre o formulário de reporte de erro sem dados pessoais e envia POST /api/questoes/{id}/reportes (RF16 RN1–RN2, US07)', async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ id: 7, idQuestao: 42, motivo: 'GABARITO_ERRADO', status: 'ABERTO' }), {
+        status: 201,
+      }),
+    );
+
+    render(<IlhaReporte idQuestao={42} />);
+
+    await user.click(screen.getByRole('button', { name: 'Reportar erro' }));
+
+    // RF16 RN2: formulario pequeno sem campos de nome ou e-mail
+    expect(screen.queryByLabelText(/nome/i)).toBeNull();
+    expect(screen.queryByLabelText(/e-mail|email/i)).toBeNull();
+
+    await user.selectOptions(screen.getByLabelText('Motivo do reporte'), 'COMENTARIO_INCORRETO');
+    await user.type(screen.getByLabelText('Descrição (opcional)'), 'O artigo citado foi revogado.');
+    await user.click(screen.getByRole('button', { name: 'Enviar reporte' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Reporte enviado');
+    expect(fetchSpy).toHaveBeenCalledWith('/api/questoes/42/reportes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        motivo: 'COMENTARIO_INCORRETO',
+        descricao: 'O artigo citado foi revogado.',
+      }),
+    });
+  });
+
+  it('exibe a mensagem de erro quando o limite de reportes por IP (429) é atingido (RF16 RN3)', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          status: 429,
+          detail: 'Muitas requisições deste endereço em pouco tempo. Tente novamente mais tarde.',
+        }),
+        { status: 429, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    render(<IlhaReporte idQuestao={42} />);
+    await user.click(screen.getByRole('button', { name: 'Reportar erro' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar reporte' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Muitas requisições deste endereço');
+  });
+
+  it('remove a questão do caderno de erros ao acertar na revisão e aponta "Próxima questão" para a seguinte do caderno (/questao/{id}/{slug}?de=caderno) (RF11 RN1–RN2, US04)', async () => {
+    const user = userEvent.setup();
+    // Visitante errou as questoes 42 e 50 anteriormente
+    registrarResposta(42, 'A', false, 'direito-constitucional');
+    registrarResposta(50, 'C', false, 'portugues');
+    expect(estaNoCadernoDeErros(42)).toBe(true);
+    expect(estaNoCadernoDeErros(50)).toBe(true);
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.startsWith('/api/questoes/resumos')) {
+        return new Response(
+          JSON.stringify([
+            {
+              id: 42,
+              slug: 'questao-42',
+              slugMateria: 'direito-constitucional',
+              nomeMateria: 'Direito Constitucional',
+              nomeAssunto: null,
+              fonte: 'Questão autoral',
+              resumoEnunciado: 'Enunciado 42',
+              anulada: false,
+              desatualizada: false,
+            },
+            {
+              id: 50,
+              slug: 'concordancia-verbal',
+              slugMateria: 'portugues',
+              nomeMateria: 'Português',
+              nomeAssunto: 'Sintaxe',
+              fonte: 'Questão autoral',
+              resumoEnunciado: 'Enunciado 50',
+              anulada: false,
+              desatualizada: false,
+            },
+          ]),
+          { status: 200 },
+        );
+      }
+      return new Response(JSON.stringify({ disponivel: false, totalRespostas: 1, percentualAcertos: null, alternativas: [] }), {
+        status: 200,
+      });
+    });
+
+    render(
+      <IlhaTreino
+        dados={criarDadosPadrao({
+          id: 42,
+          filtro: 'caderno',
+          listagemUrl: '/caderno-de-erros',
+          proximaUrl: null,
+        })}
+      />,
+    );
+
+    // Acerta a questao #42 ao refazer pelo caderno
+    await user.click(screen.getAllByRole('button')[1]); // B (correta)
+
+    expect(estaNoCadernoDeErros(42)).toBe(false);
+    expect(estaNoCadernoDeErros(50)).toBe(true);
+    expect(document.querySelector('[data-removida-caderno]')).toHaveTextContent(
+      'Questão removida do caderno de erros.',
+    );
+
+    const linkProxima = await screen.findByRole('link', { name: 'Próxima questão' });
+    expect(linkProxima).toHaveAttribute('href', '/questao/50/concordancia-verbal?de=caderno');
   });
 });
 

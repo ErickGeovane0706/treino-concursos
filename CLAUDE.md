@@ -10,6 +10,7 @@ Banco de questões para concursos públicos, **gratuito, sem limite diário e se
 | Tabelas, constraints, índices e consultas | `doc/banco-de-dados.md` e `doc/diagramas/bancoDeDados.plantuml` |
 | Rotas, JSON, erros, paginação, segurança | `doc/api.md` |
 | Como rodar, testar e como frontend e backend se encaixam | `doc/ambiente-de-desenvolvimento.md` |
+| Deploy em VPS, Docker de produção, Cloudflare, backup e restauração | `doc/deploy.md` |
 | Ordem de implementação e escopo de cada issue | `doc/plano-de-implementacao.md` |
 | Referência visual (cores, modo treino, modo simulado) | `doc/prototipo.html` |
 

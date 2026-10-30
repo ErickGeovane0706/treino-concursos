@@ -4,6 +4,7 @@ import br.com.treinoconcursos.repository.UsuarioRepository;
 import br.com.treinoconcursos.seguranca.CsrfCookieFilter;
 import br.com.treinoconcursos.seguranca.CsrfSpaHandler;
 import br.com.treinoconcursos.seguranca.UsuarioSessaoFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,8 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 
 import java.util.List;
 
@@ -44,7 +47,8 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, CsrfTokenRepository csrfTokenRepository,
-            SecurityContextRepository securityContextRepository, UsuarioRepository usuarioRepository)
+            SecurityContextRepository securityContextRepository, UsuarioRepository usuarioRepository,
+            @Value("${app.vite-dev-server:}") String servidorViteDev)
             throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
@@ -52,7 +56,20 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasAnyRole("EDITOR", "ADMIN")
                         .requestMatchers("/api/auth/eu").authenticated()
                         .anyRequest().permitAll())
-                .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository).csrfTokenRequestHandler(new CsrfSpaHandler()))
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(politicaCsp(servidorViteDev)))
+                        .referrerPolicy(referrer -> referrer.policy(
+                                ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)
+                                .requestMatcher(AnyRequestMatcher.INSTANCE)))
+                // doc/api.md secao 9: os dois POST publicos (respostas e reportes) sao isentos
+                // de CSRF, pois nao usam sessao, e tem limite por IP em memoria.
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/questoes/*/respostas", "/api/questoes/*/reportes")
+                        .csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(new CsrfSpaHandler()))
                 .securityContext(contexto -> contexto.securityContextRepository(securityContextRepository))
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
@@ -69,6 +86,25 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable());
         return http.build();
+    }
+
+    /**
+     * RNF01: CSP compativel com o proprio site (fontes e scripts locais) e com o
+     * Google AdSense. Em desenvolvimento, libera tambem o servidor do Vite.
+     */
+    static String politicaCsp(String servidorViteDev) {
+        String origensDev = (servidorViteDev == null || servidorViteDev.isBlank())
+                ? ""
+                : " " + servidorViteDev.trim() + " " + servidorViteDev.trim().replaceFirst("^http", "ws");
+        return "default-src 'self';"
+                + " script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://adservice.google.com https://www.googletagservices.com https://tpc.googlesyndication.com https://ep2.adtrafficquality.google https://fundingchoicesmessages.google.com" + origensDev + ";"
+                + " style-src 'self' 'unsafe-inline'" + origensDev + ";"
+                + " img-src 'self' data: https:;"
+                + " font-src 'self' data: https://fonts.gstatic.com;"
+                + " connect-src 'self' https://pagead2.googlesyndication.com https://adservice.google.com https://googleads.g.doubleclick.net https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://fundingchoicesmessages.google.com" + origensDev + ";"
+                + " frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://pagead2.googlesyndication.com https://www.google.com https://ep2.adtrafficquality.google https://fundingchoicesmessages.google.com;"
+                + " object-src 'none';"
+                + " base-uri 'self'";
     }
 
     /** RNF01: BCrypt com custo 12 (minimo exigido: 10). */

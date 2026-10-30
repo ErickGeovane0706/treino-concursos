@@ -3,14 +3,23 @@ import { createRoot } from 'react-dom/client';
 import {
   armazenamentoDisponivel,
   buscarProximaNaoResolvida,
+  buscarQuestoesCadernoDeErros,
   calcularResumoProgresso,
+  definirMateriaCaderno,
   definirOcultarResolvidas,
+  escolherProximaDoCaderno,
+  filtrarCadernoPorMateria,
+  lerMateriaCaderno,
   lerOcultarResolvidas,
   lerProgresso,
   limparProgresso,
   limparUltimaVista,
+  listarIdsCadernoDeErros,
+  listarMateriasDoCaderno,
   normalizarChaveFiltro,
+  urlQuestaoCaderno,
   type DadosProgresso,
+  type QuestaoCaderno,
   type ResultadoContinuar,
 } from '../progresso/progresso';
 import { montarIlha } from './montar';
@@ -184,6 +193,12 @@ export function IlhaListagem({
           </label>
         )}
 
+        <a className="link-meu-progresso" href="/caderno-de-erros" data-link-caderno-erros>
+          {resumo.totalErros > 0
+            ? `Caderno de erros (${resumo.totalErros})`
+            : 'Caderno de erros'}
+        </a>
+
         <a className="link-meu-progresso" href="/meu-progresso">
           {resumo.totalResolvidas > 0
             ? `Meu progresso (${resumo.totalResolvidas} ${resumo.totalResolvidas === 1 ? 'resolvida' : 'resolvidas'})`
@@ -312,10 +327,192 @@ export function IlhaMeuProgresso() {
         >
           Apagar todo o progresso
         </button>
+        <a className="btn ghost" href="/caderno-de-erros" data-link-caderno-erros>
+          {resumo.totalErros > 0 ? `Caderno de erros (${resumo.totalErros})` : 'Caderno de erros'}
+        </a>
         <a className="btn" href="/questoes">
           Ir para as questões
         </a>
       </div>
+    </div>
+  );
+}
+
+export function IlhaCadernoDeErros({ fetchFn }: { fetchFn?: typeof fetch } = {}) {
+  const disponivel = useMemo(() => armazenamentoDisponivel(), []);
+  const idsIniciais = useMemo(() => (disponivel ? listarIdsCadernoDeErros() : []), [disponivel]);
+  const [carregando, setCarregando] = useState<boolean>(idsIniciais.length > 0);
+  const [questoes, setQuestoes] = useState<QuestaoCaderno[]>([]);
+  const [materiaAtiva, setMateriaAtiva] = useState<string | null>(() => (disponivel ? lerMateriaCaderno() : null));
+
+  useEffect(() => {
+    if (!disponivel || idsIniciais.length === 0) {
+      setCarregando(false);
+      return;
+    }
+    let cancelado = false;
+    setCarregando(true);
+    buscarQuestoesCadernoDeErros({ fetchFn })
+      .then((carregadas) => {
+        if (cancelado) return;
+        setQuestoes(carregadas);
+        const materiaSalva = lerMateriaCaderno();
+        if (materiaSalva && !carregadas.some((q) => q.slugMateria === materiaSalva)) {
+          definirMateriaCaderno(null);
+          setMateriaAtiva(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelado) {
+          setCarregando(false);
+        }
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [disponivel, idsIniciais, fetchFn]);
+
+  const selecionarMateria = useCallback((slug: string | null) => {
+    definirMateriaCaderno(slug);
+    setMateriaAtiva(slug);
+  }, []);
+
+  const materias = useMemo(() => listarMateriasDoCaderno(questoes), [questoes]);
+  const questoesFiltradas = useMemo(
+    () => filtrarCadernoPorMateria(questoes, materiaAtiva),
+    [questoes, materiaAtiva],
+  );
+  const primeiraQuestao = useMemo(
+    () => escolherProximaDoCaderno(questoes, null, materiaAtiva),
+    [questoes, materiaAtiva],
+  );
+
+  if (!disponivel) {
+    return (
+      <p className="aviso-armazenamento" data-aviso-armazenamento>
+        Armazenamento do navegador indisponível (aba anônima ou bloqueio): o caderno de erros não pode ser mantido
+        nesta sessão.
+      </p>
+    );
+  }
+
+  if (carregando) {
+    return (
+      <p role="status" data-carregando-caderno>
+        Carregando questões do caderno de erros…
+      </p>
+    );
+  }
+
+  if (questoes.length === 0) {
+    return (
+      <div className="vazio-listagem texto" data-caderno-vazio>
+        <p>Você não tem questões no caderno de erros no momento.</p>
+        <p>
+          Sempre que você errar uma questão no modo treino, ela entrará aqui automaticamente para revisão. Quando
+          acertá-la ao refazer, ela sairá do caderno.
+        </p>
+        <div className="acoes">
+          <a className="btn" href="/questoes">
+            Ir para as questões
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="painel-caderno-erros" data-painel-caderno-erros>
+      <nav aria-label="Filtrar caderno por matéria">
+        <ul className="filters">
+          <li>
+            <button
+              type="button"
+              className="chip"
+              aria-pressed={materiaAtiva === null}
+              data-ativo={materiaAtiva === null}
+              data-filtro-materia="todas"
+              onClick={() => selecionarMateria(null)}
+            >
+              Todas ({questoes.length})
+            </button>
+          </li>
+          {materias.map((mat) => {
+            const ativo = materiaAtiva === mat.slug;
+            return (
+              <li key={mat.slug}>
+                <button
+                  type="button"
+                  className="chip"
+                  aria-pressed={ativo}
+                  data-ativo={ativo}
+                  data-filtro-materia={mat.slug}
+                  onClick={() => selecionarMateria(mat.slug)}
+                >
+                  {mat.nome} ({mat.quantidade})
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      <div className="controles-progresso" data-controles-caderno>
+        <div className="controles-progresso-linha">
+          {primeiraQuestao && (
+            <a
+              className="btn"
+              href={urlQuestaoCaderno(primeiraQuestao.id, primeiraQuestao.slug)}
+              data-iniciar-caderno
+            >
+              Começar revisão
+            </a>
+          )}
+          <span className="resumo-caderno" data-resumo-caderno>
+            {questoesFiltradas.length}{' '}
+            {questoesFiltradas.length === 1 ? 'questão para revisar' : 'questões para revisar'}
+          </span>
+        </div>
+      </div>
+
+      <ol className="lista-questoes" data-lista-caderno>
+        {questoesFiltradas.map((q) => (
+          <li key={q.id} className="item-questao item-errou" data-id-questao={q.id}>
+            <div className="meta">
+              <span className="classificacao-item">
+                <strong>#{q.id}</strong>
+                <span>·</span>
+                <span>{q.nomeMateria}</span>
+                {q.nomeAssunto && (
+                  <>
+                    <span aria-hidden="true">›</span>
+                    <span>{q.nomeAssunto}</span>
+                  </>
+                )}
+              </span>
+              <span className="origem">{q.fonte}</span>
+              <span className="tag-resolvida bad" data-tag-caderno>
+                No caderno de erros
+              </span>
+            </div>
+            <p className="resumo-enunciado">
+              <a
+                className="link-questao"
+                href={urlQuestaoCaderno(q.id, q.slug)}
+                data-link-questao-caderno={q.id}
+              >
+                {q.resumoEnunciado}
+              </a>
+            </p>
+            {(q.anulada || q.desatualizada) && (
+              <div className="avisos-item">
+                {q.anulada && <span className="tag-aviso tag-anulada">Anulada</span>}
+                {q.desatualizada && <span className="tag-aviso">Desatualizada</span>}
+              </div>
+            )}
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
@@ -351,6 +548,7 @@ export function iniciarIlhaListagem(): void {
   }
 
   montarIlha('meu-progresso', () => <IlhaMeuProgresso />);
+  montarIlha('caderno-de-erros', () => <IlhaCadernoDeErros />);
 }
 
 iniciarIlhaListagem();

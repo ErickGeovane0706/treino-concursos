@@ -42,6 +42,7 @@ public class QuestaoPublicaController {
         }
         model.addAttribute("questao", questao);
         model.addAttribute("dadosEstruturados", dadosEstruturados.trilhaDaQuestao(questao));
+        model.addAttribute("exibirAnuncios", true);
         return "questao";
     }
 }

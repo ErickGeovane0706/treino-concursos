@@ -97,6 +97,37 @@ describe('Ilha de treino da questão', () => {
     expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 
+  it('mantém o bloco de anúncio do servidor intacto ao montar a ilha e usa as ações do servidor (RF12)', async () => {
+    document.body.innerHTML = `
+      <div data-ilha="treino" data-id="15" data-correta="A" data-proxima-url="/questao/16/outra">
+        <button class="opt" data-letra="A"><span class="l">A</span><span class="opt-texto">Um</span></button>
+        <div data-comentario-html><p>Comentário</p></div>
+      </div>
+      <aside data-bloco-anuncio="questao"><span>Publicidade</span><ins class="adsbygoogle"></ins></aside>
+      <div data-acoes-treino><a href="/questao/16/outra" data-proxima data-acoes-servidor>Próxima questão</a></div>
+    `;
+    const anuncio = document.querySelector('aside[data-bloco-anuncio]');
+    const insercao = document.querySelector('ins.adsbygoogle');
+
+    await act(async () => iniciarIlhaTreino());
+
+    expect(document.querySelector('aside[data-bloco-anuncio]')).toBe(anuncio);
+    expect(document.querySelector('ins.adsbygoogle')).toBe(insercao);
+    expect(anuncio).toHaveTextContent('Publicidade');
+
+    // Um único "Próxima questão", depois do anúncio
+    const links = screen.getAllByRole('link', { name: 'Próxima questão' });
+    expect(links).toHaveLength(1);
+    expect(document.querySelector('[data-acoes-servidor]')).toBeNull();
+    expect(links[0].closest('[data-acoes-treino]')).not.toBeNull();
+    expect(anuncio!.compareDocumentPosition(links[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // "Refazer" aparece no mesmo lugar depois da resposta
+    await act(async () => screen.getAllByRole('button')[0].click());
+    expect(screen.getByRole('button', { name: 'Refazer' }).closest('[data-acoes-treino]')).not.toBeNull();
+    expect(document.querySelector('aside[data-bloco-anuncio]')).toBe(anuncio);
+  });
+
   it('corrige ao clicar na alternativa certa, trava os botões, foca em "Próxima questão" e salva no localStorage', async () => {
     const user = userEvent.setup();
     render(<IlhaTreino dados={criarDadosPadrao()} />);
@@ -113,7 +144,6 @@ describe('Ilha de treino da questão', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Você acertou');
     expect(screen.getByText('Comentário explicando por que a B está certa.')).toBeInTheDocument();
-    expect(document.querySelector('[data-espaco-anuncio]')).not.toBeNull();
 
     const linkProxima = screen.getByRole('link', { name: 'Próxima questão' });
     expect(linkProxima).toHaveAttribute('href', '/questao/43/proxima-questao?de=direito-constitucional');
@@ -221,7 +251,6 @@ describe('Ilha de treino da questão', () => {
     expect(gabarito).not.toBeNull();
     expect(gabarito).toHaveTextContent('Gabarito: B');
     expect(gabarito).toHaveTextContent('Comentário explicando por que a B está certa.');
-    expect(document.querySelector('[data-espaco-anuncio]')).not.toBeNull();
     expect(screen.getByRole('link', { name: 'Próxima questão' })).toHaveAttribute(
       'href',
       '/questao/43/proxima-questao?de=direito-constitucional',

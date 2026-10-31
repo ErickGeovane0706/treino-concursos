@@ -65,36 +65,40 @@
               <div class="comentario texto" data-comentario-html th:utext="${questao.comentarioHtml}"></div>
             </div>
           </details>
+        </div>
 
-          <!--/* RF12 RN1-RN3: bloco de anuncio principal entre o comentario e o botao, com 100 px de espaco */-->
-          <aside class="bloco-anuncio bloco-anuncio-questao espaco-anuncio-questao"
-                 data-bloco-anuncio="questao"
-                 data-espaco-anuncio="true"
-                 th:attr="data-ads-enabled=${#site.adsEnabled},
-                          data-ad-client=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
-                          data-ad-slot=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseSlotQuestao) ? #site.adsenseSlotQuestao : null},
-                          data-consentimento-atual=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"
-                 aria-label="Publicidade">
-            <span class="rotulo-anuncio">Publicidade</span>
-            <div class="area-anuncio" data-area-anuncio>
-              <ins th:if="${#site.adsEnabled}"
-                   class="adsbygoogle"
-                   style="display:block"
-                   data-ad-format="horizontal"
-                   data-full-width-responsive="false"
-                   th:attr="data-ad-client=${!#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
-                            data-ad-slot=${!#strings.isEmpty(#site.adsenseSlotQuestao) ? #site.adsenseSlotQuestao : null},
-                            data-npa=${#site.anunciosNaoPersonalizados ? '1' : null},
-                            data-consentimento-aplicado=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"></ins>
-            </div>
-          </aside>
-
-          <div class="acoes-treino">
-            <a class="btn btn-bloco"
-               th:href="${questao.proximaUrl != null ? questao.proximaUrl : questao.listagemUrl}"
-               th:text="${questao.proximaUrl != null ? 'Próxima questão' : 'Ver mais questões'}"
-               data-proxima>Próxima questão</a>
+        <!--/* RF12 RN1-RN3: bloco de anuncio principal entre o comentario e o botao, com 100 px de espaco.
+             Fica fora da ilha: o React substituiria o conteudo dela e apagaria o anuncio. */-->
+        <div class="espaco-anuncio-questao" data-espaco-anuncio="true" aria-hidden="true" th:unless="${#site.adsEnabled}"></div>
+        <aside class="bloco-anuncio bloco-anuncio-questao espaco-anuncio-questao"
+               th:if="${#site.adsEnabled}"
+               data-bloco-anuncio="questao"
+               data-espaco-anuncio="true"
+               th:attr="data-ads-enabled=${#site.adsEnabled},
+                        data-ad-client=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
+                        data-ad-slot=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseSlotQuestao) ? #site.adsenseSlotQuestao : null},
+                        data-consentimento-atual=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"
+               aria-label="Publicidade">
+          <span class="rotulo-anuncio">Publicidade</span>
+          <div class="area-anuncio" data-area-anuncio>
+            <ins th:if="${#site.adsEnabled}"
+                 class="adsbygoogle"
+                 style="display:block"
+                 data-ad-format="horizontal"
+                 data-full-width-responsive="false"
+                 th:attr="data-ad-client=${!#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
+                          data-ad-slot=${!#strings.isEmpty(#site.adsenseSlotQuestao) ? #site.adsenseSlotQuestao : null},
+                          data-npa=${#site.anunciosNaoPersonalizados ? '1' : null},
+                          data-consentimento-aplicado=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"></ins>
           </div>
+        </aside>
+
+        <!--/* A ilha de treino assume este elemento por portal e troca o link do servidor */-->
+        <div class="acoes-treino" data-acoes-treino>
+          <a class="btn btn-bloco"
+             th:href="${questao.proximaUrl != null ? questao.proximaUrl : questao.listagemUrl}"
+             th:text="${questao.proximaUrl != null ? 'Próxima questão' : 'Ver mais questões'}"
+             data-proxima data-acoes-servidor>Próxima questão</a>
         </div>
 
         <!--/* RF16 RN1-RN3, US07: botao para reportar erro sem coletar dados pessoais */-->
@@ -117,6 +121,7 @@
 
       <!--/* RF12 RN1: bloco lateral somente em telas com largura >= 1024 px */-->
       <aside class="bloco-anuncio bloco-anuncio-lateral"
+             th:if="${#site.adsEnabled}"
              data-bloco-anuncio="lateral"
              th:attr="data-ads-enabled=${#site.adsEnabled},
                       data-ad-client=${#site.adsEnabled and !#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import {
   armazenamentoDisponivel,
   buscarProximaNaoResolvida,
@@ -122,7 +123,7 @@ function extrairEstatisticasValidas(json: unknown): EstatisticasQuestao | null {
   };
 }
 
-export function IlhaTreino({ dados }: { dados: DadosTreino }) {
+export function IlhaTreino({ dados, acoes }: { dados: DadosTreino; acoes?: HTMLElement | null }) {
   const [escolha, setEscolha] = useState<string | null>(null);
   const [proximaUrl, setProximaUrl] = useState<string | null>(dados.proximaUrl);
   const [estatisticas, setEstatisticas] = useState<EstatisticasQuestao | null>(null);
@@ -131,6 +132,11 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
   const jaEnviouRespostaRef = useRef(false);
   const montadoRef = useRef(true);
   const semArmazenamento = useMemo(() => !armazenamentoDisponivel(), []);
+
+  // Tira o link do servidor no mesmo commit em que o portal entra, sem pintar os dois.
+  useLayoutEffect(() => {
+    acoes?.querySelector('[data-acoes-servidor]')?.remove();
+  }, [acoes]);
 
   useEffect(() => {
     montadoRef.current = true;
@@ -314,6 +320,24 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
   const respondida = escolha !== null;
   const acertou = escolha === dados.correta;
 
+  const botoes = (
+    <>
+      <a
+        ref={proximaRef}
+        className="btn btn-bloco"
+        href={proximaUrl ?? dados.listagemUrl}
+        data-proxima
+      >
+        {proximaUrl ? 'Próxima questão' : 'Ver mais questões'}
+      </a>
+      {respondida && (
+        <button type="button" className="btn ghost btn-bloco" onClick={refazer} data-refazer>
+          Refazer
+        </button>
+      )}
+    </>
+  );
+
   function classeAlternativa(letra: string): string {
     if (!respondida) return 'opt';
     if (letra === dados.correta) return 'opt ok';
@@ -355,7 +379,7 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
         </p>
       )}
 
-      {/* Antes da resposta repete o <details>, o espaco do anuncio e o link que o
+      {/* Antes da resposta repete o <details> que o
           servidor renderizou, para a montagem da ilha nao deslocar a pagina (CLS, RNF03). */}
       {respondida ? (
         <div className={`fb ${acertou ? 'ok' : 'bad'}`} role="status">
@@ -384,24 +408,7 @@ export function IlhaTreino({ dados }: { dados: DadosTreino }) {
         </details>
       )}
 
-      {/* RF12 RN2: 100 px de distancia entre o espaco do anuncio e os botoes */}
-      <div className="espaco-anuncio-questao" data-espaco-anuncio aria-hidden="true" />
-
-      <div className="acoes-treino">
-        <a
-          ref={proximaRef}
-          className="btn btn-bloco"
-          href={proximaUrl ?? dados.listagemUrl}
-          data-proxima
-        >
-          {proximaUrl ? 'Próxima questão' : 'Ver mais questões'}
-        </a>
-        {respondida && (
-          <button type="button" className="btn ghost btn-bloco" onClick={refazer} data-refazer>
-            Refazer
-          </button>
-        )}
-      </div>
+      {acoes ? createPortal(botoes, acoes) : <div className="acoes-treino">{botoes}</div>}
     </>
   );
 }
@@ -528,7 +535,9 @@ export function IlhaReporte({ idQuestao }: { idQuestao: number }) {
 export function iniciarIlhaTreino(): void {
   montarIlha('treino', (elemento) => {
     const dados = lerDadosTreino(elemento);
-    return dados ? <IlhaTreino dados={dados} /> : null;
+    return dados ? (
+      <IlhaTreino dados={dados} acoes={document.querySelector<HTMLElement>('[data-acoes-treino]')} />
+    ) : null;
   });
   montarIlha('reporte', (elemento) => {
     const id = Number(elemento.dataset.id);

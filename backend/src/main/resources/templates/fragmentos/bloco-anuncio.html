@@ -28,6 +28,10 @@
             s.crossOrigin = 'anonymous';
             s.src = url;
             document.body.appendChild(s);
+            // Cada <ins> visivel precisa de um push; o bloco lateral fica oculto abaixo de 1024 px (RF12 RN1)
+            document.querySelectorAll('ins.adsbygoogle').forEach(function (ins) {
+              if (ins.offsetParent !== null) window.adsbygoogle.push({});
+            });
           }
           ['pointerdown', 'keydown', 'touchstart', 'scroll', 'mousemove'].forEach(function (ev) {
             window.addEventListener(ev, carregarAdsense, { once: true, passive: true });

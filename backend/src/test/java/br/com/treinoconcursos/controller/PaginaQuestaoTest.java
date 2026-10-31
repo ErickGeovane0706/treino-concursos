@@ -148,6 +148,16 @@ class PaginaQuestaoTest extends IntegracaoTest {
         assertThat(resultado.getRequest().getSession(false)).isNull();
 
         String html = resultado.getResponse().getContentAsString();
+        // RF12: o anuncio fica fora da ilha de treino, entre ela e as acoes, para o React nao apaga-lo
+        assertThat(html.indexOf("data-ilha=\"treino\""))
+                .isLessThan(html.indexOf("data-espaco-anuncio"));
+        assertThat(html.indexOf("data-espaco-anuncio"))
+                .isLessThan(html.indexOf("data-acoes-treino"));
+        assertThat(html.substring(html.indexOf("data-ilha=\"treino\""), html.indexOf("data-espaco-anuncio")))
+                .contains("data-comentario-html")
+                .doesNotContain("data-proxima>");
+        // RF12 RN5: com ADS_ENABLED=false nao ha bloco nem rotulo de anuncio, so o espaco reservado
+        assertThat(html).doesNotContain("Publicidade").doesNotContain("data-bloco-anuncio");
         Matcher matcherTitulo = Pattern.compile("<title>(.*?)</title>").matcher(html);
         assertThat(matcherTitulo.find()).isTrue();
         assertThat(matcherTitulo.group(1).length()).isLessThanOrEqualTo(60);

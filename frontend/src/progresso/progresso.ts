@@ -125,12 +125,49 @@ export function normalizarChaveFiltro(filtro?: string | null): string {
   return limpo || 'todas';
 }
 
+export interface ParametrosFiltroIds {
+  materia?: string;
+  assunto?: string;
+  banca?: string;
+  orgao?: string;
+  ano?: string;
+  nivel?: string;
+  tipo?: string;
+}
+
 /**
- * Extrai os parametros de query string para GET /api/questoes/ids a partir da chave do filtro.
+ * Extrai os parametros de query string para GET /api/questoes/ids a partir da chave do filtro (RF07 RN1).
  */
-export function parametrosFiltroIds(filtro?: string | null): { materia?: string; assunto?: string } {
+export function parametrosFiltroIds(filtro?: string | null): ParametrosFiltroIds {
   const chave = normalizarChaveFiltro(filtro);
   if (chave === 'todas') return {};
+  if (chave.includes('=')) {
+    const resultado: ParametrosFiltroIds = {};
+    for (const par of chave.split(/[,&]/)) {
+      const idx = par.indexOf('=');
+      if (idx <= 0) continue;
+      const k = par.slice(0, idx).trim();
+      const v = par.slice(idx + 1).trim();
+      if (!v) continue;
+      if (
+        k === 'materia' ||
+        k === 'assunto' ||
+        k === 'banca' ||
+        k === 'orgao' ||
+        k === 'ano' ||
+        k === 'nivel' ||
+        k === 'tipo'
+      ) {
+        resultado[k] = v;
+      }
+    }
+    return resultado;
+  }
+  if (chave.startsWith('banca/')) return { banca: chave.slice('banca/'.length) };
+  if (chave.startsWith('orgao/')) return { orgao: chave.slice('orgao/'.length) };
+  if (chave.startsWith('ano/')) return { ano: chave.slice('ano/'.length) };
+  if (chave.startsWith('nivel/')) return { nivel: chave.slice('nivel/'.length) };
+  if (chave.startsWith('tipo/')) return { tipo: chave.slice('tipo/'.length) };
   const [materia, assunto] = chave.split('/', 2);
   if (assunto) {
     return { materia, assunto };
@@ -149,11 +186,27 @@ export function urlQuestaoPorId(idQuestao: number, filtro?: string | null): stri
 }
 
 /**
- * Monta a URL da listagem correspondente ao filtro.
+ * Monta a URL da listagem correspondente ao filtro (RF07 RN4).
  */
 export function urlListagemDoFiltro(filtro?: string | null): string {
   const chave = normalizarChaveFiltro(filtro);
-  return chave === 'todas' ? '/questoes' : `/questoes/${chave}`;
+  if (chave === 'todas') return '/questoes';
+  if (chave.includes('=')) {
+    const params = new URLSearchParams();
+    const f = parametrosFiltroIds(chave);
+    if (f.materia) params.set('materia', f.materia);
+    if (f.assunto) params.set('assunto', f.assunto);
+    if (f.banca) params.set('banca', f.banca);
+    if (f.orgao) params.set('orgao', f.orgao);
+    if (f.ano) params.set('ano', f.ano);
+    if (f.nivel) params.set('nivel', f.nivel);
+    if (f.tipo) params.set('tipo', f.tipo);
+    const qs = params.toString();
+    return qs ? `/questoes?${qs}` : '/questoes';
+  }
+  if (chave.startsWith('nivel/')) return `/questoes?nivel=${chave.slice('nivel/'.length)}`;
+  if (chave.startsWith('tipo/')) return `/questoes?tipo=${chave.slice('tipo/'.length)}`;
+  return `/questoes/${chave}`;
 }
 
 function registroRespostaValido(valor: unknown): valor is RegistroResposta {
@@ -647,9 +700,14 @@ async function consultarPaginaIds(
   fetchFn: typeof fetch,
 ): Promise<PaginaIdsQuestoes> {
   const params = new URLSearchParams();
-  const { materia, assunto } = parametrosFiltroIds(chaveFiltro);
-  if (materia) params.set('materia', materia);
-  if (assunto) params.set('assunto', assunto);
+  const f = parametrosFiltroIds(chaveFiltro);
+  if (f.materia) params.set('materia', f.materia);
+  if (f.assunto) params.set('assunto', f.assunto);
+  if (f.banca) params.set('banca', f.banca);
+  if (f.orgao) params.set('orgao', f.orgao);
+  if (f.ano) params.set('ano', f.ano);
+  if (f.nivel) params.set('nivel', f.nivel);
+  if (f.tipo) params.set('tipo', f.tipo);
   if (depoisDe > 0) params.set('depoisDe', String(depoisDe));
 
   const qs = params.toString();

@@ -13,6 +13,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title th:text="${listagem.tituloPagina == null ? #site.nome : listagem.tituloPagina + ' | ' + #site.nome}">Treino de Concursos</title>
   <meta name="description" th:if="${listagem.metaDescricao != null}" th:content="${listagem.metaDescricao}">
+  <meta name="robots" content="noindex" th:unless="${listagem.indexavel}">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#EEF2F7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0F1626" media="(prefers-color-scheme: dark)">
@@ -50,19 +51,28 @@
              data-ilha="listagem"
              th:attr="data-filtro=${listagem.filtroAtivo != null ? listagem.filtroAtivo : 'todas'},
                       data-materia=${listagem.slugMateriaAtiva},
-                      data-assunto=${listagem.slugAssuntoAtivo}">
-      <nav class="trilha" aria-label="Trilha de navegação" th:if="${listagem.slugMateriaAtiva != null}">
+                      data-assunto=${listagem.slugAssuntoAtivo},
+                      data-banca=${listagem.slugBancaAtiva},
+                      data-orgao=${listagem.slugOrgaoAtivo},
+                      data-ano=${listagem.anoAtivo},
+                      data-nivel=${listagem.nivelAtivo},
+                      data-tipo=${listagem.tipoAtivo}">
+      <nav class="trilha" aria-label="Trilha de navegação" th:if="${listagem.filtroAtivo != null}">
         <a href="/questoes">Todas as questões</a>
         <span aria-hidden="true">›</span>
-        <a th:if="${listagem.slugAssuntoAtivo != null}"
-           th:href="@{/questoes/{m}(m=${listagem.slugMateriaAtiva})}"
-           th:text="${listagem.nomeMateriaAtiva}">Português</a>
-        <span th:if="${listagem.slugAssuntoAtivo == null}"
-              th:text="${listagem.nomeMateriaAtiva}">Português</span>
-        <th:block th:if="${listagem.slugAssuntoAtivo != null}">
-          <span aria-hidden="true">›</span>
-          <span th:text="${listagem.nomeAssuntoAtivo}">Concordância verbal</span>
+        <th:block th:if="${listagem.slugMateriaAtiva != null}">
+          <a th:if="${listagem.slugAssuntoAtivo != null}"
+             th:href="@{/questoes/{m}(m=${listagem.slugMateriaAtiva})}"
+             th:text="${listagem.nomeMateriaAtiva}">Português</a>
+          <span th:if="${listagem.slugAssuntoAtivo == null}"
+                th:text="${listagem.nomeMateriaAtiva}">Português</span>
+          <th:block th:if="${listagem.slugAssuntoAtivo != null}">
+            <span aria-hidden="true">›</span>
+            <span th:text="${listagem.nomeAssuntoAtivo}">Concordância verbal</span>
+          </th:block>
         </th:block>
+        <span th:if="${listagem.slugMateriaAtiva == null}"
+              th:text="${listagem.tituloH1}">Questões filtradas</span>
       </nav>
 
       <h1 th:text="${listagem.tituloH1}">Todas as questões</h1>
@@ -70,8 +80,10 @@
       <nav aria-label="Filtrar por matéria" th:if="${!#lists.isEmpty(listagem.materias)}">
         <ul class="filters">
           <li>
-            <a class="chip" th:if="${listagem.slugMateriaAtiva == null}" href="/questoes" aria-current="page">Todas</a>
-            <a class="chip" th:if="${listagem.slugMateriaAtiva != null}" href="/questoes">Todas</a>
+            <a class="chip" th:if="${listagem.slugMateriaAtiva == null}"
+               th:href="${listagem.urlLimparMateria}" aria-current="page">Todas</a>
+            <a class="chip" th:if="${listagem.slugMateriaAtiva != null}"
+               th:href="${listagem.urlLimparMateria}">Todas</a>
           </li>
           <li th:each="mat : ${listagem.materias}">
             <a class="chip" th:if="${mat.ativo and listagem.slugAssuntoAtivo == null}"
@@ -91,10 +103,10 @@
         <ul class="filters filters-assuntos">
           <li>
             <a class="chip" th:if="${listagem.slugAssuntoAtivo == null}"
-               th:href="@{/questoes/{m}(m=${listagem.slugMateriaAtiva})}"
+               th:href="${listagem.urlLimparAssunto}"
                aria-current="page">Todos os assuntos</a>
             <a class="chip" th:if="${listagem.slugAssuntoAtivo != null}"
-               th:href="@{/questoes/{m}(m=${listagem.slugMateriaAtiva})}">Todos os assuntos</a>
+               th:href="${listagem.urlLimparAssunto}">Todos os assuntos</a>
           </li>
           <li th:each="ass : ${listagem.assuntos}">
             <a class="chip" th:if="${ass.ativo}"
@@ -103,6 +115,86 @@
             <a class="chip" th:unless="${ass.ativo}"
                th:href="${ass.url}" th:text="${ass.nome}"
                data-ativo="false">Crase</a>
+          </li>
+        </ul>
+      </nav>
+
+      <nav aria-label="Filtrar por banca" th:if="${!#lists.isEmpty(listagem.bancas)}">
+        <ul class="filters filters-bancas">
+          <li>
+            <a class="chip" th:if="${listagem.slugBancaAtiva == null}"
+               th:href="${listagem.urlLimparBanca}"
+               aria-current="page">Todas as bancas</a>
+            <a class="chip" th:if="${listagem.slugBancaAtiva != null}"
+               th:href="${listagem.urlLimparBanca}">Todas as bancas</a>
+          </li>
+          <li th:each="ban : ${listagem.bancas}">
+            <a class="chip" th:if="${ban.ativo}"
+               th:href="${ban.url}" th:text="${ban.nome}"
+               aria-current="page" data-ativo="true">FGV</a>
+            <a class="chip" th:unless="${ban.ativo}"
+               th:href="${ban.url}" th:text="${ban.nome}"
+               data-ativo="false">FGV</a>
+          </li>
+        </ul>
+      </nav>
+
+      <nav aria-label="Filtrar por órgão" th:if="${!#lists.isEmpty(listagem.orgaos)}">
+        <ul class="filters filters-orgaos">
+          <li>
+            <a class="chip" th:if="${listagem.slugOrgaoAtivo == null}"
+               th:href="${listagem.urlLimparOrgao}"
+               aria-current="page">Todos os órgãos</a>
+            <a class="chip" th:if="${listagem.slugOrgaoAtivo != null}"
+               th:href="${listagem.urlLimparOrgao}">Todos os órgãos</a>
+          </li>
+          <li th:each="org : ${listagem.orgaos}">
+            <a class="chip" th:if="${org.ativo}"
+               th:href="${org.url}" th:text="${org.nome}"
+               aria-current="page" data-ativo="true">TCE-GO</a>
+            <a class="chip" th:unless="${org.ativo}"
+               th:href="${org.url}" th:text="${org.nome}"
+               data-ativo="false">TCE-GO</a>
+          </li>
+        </ul>
+      </nav>
+
+      <nav aria-label="Filtrar por ano" th:if="${!#lists.isEmpty(listagem.anos)}">
+        <ul class="filters filters-anos">
+          <li>
+            <a class="chip" th:if="${listagem.anoAtivo == null}"
+               th:href="${listagem.urlLimparAno}"
+               aria-current="page">Todos os anos</a>
+            <a class="chip" th:if="${listagem.anoAtivo != null}"
+               th:href="${listagem.urlLimparAno}">Todos os anos</a>
+          </li>
+          <li th:each="anoItem : ${listagem.anos}">
+            <a class="chip" th:if="${anoItem.ativo}"
+               th:href="${anoItem.url}" th:text="${anoItem.nome}"
+               aria-current="page" data-ativo="true">2025</a>
+            <a class="chip" th:unless="${anoItem.ativo}"
+               th:href="${anoItem.url}" th:text="${anoItem.nome}"
+               data-ativo="false">2025</a>
+          </li>
+        </ul>
+      </nav>
+
+      <nav aria-label="Filtrar por nível" th:if="${!#lists.isEmpty(listagem.niveis)}">
+        <ul class="filters filters-niveis">
+          <li>
+            <a class="chip" th:if="${listagem.nivelAtivo == null}"
+               th:href="${listagem.urlLimparNivel}"
+               aria-current="page">Todos os níveis</a>
+            <a class="chip" th:if="${listagem.nivelAtivo != null}"
+               th:href="${listagem.urlLimparNivel}">Todos os níveis</a>
+          </li>
+          <li th:each="niv : ${listagem.niveis}">
+            <a class="chip" th:if="${niv.ativo}"
+               th:href="${niv.url}" th:text="${niv.nome}"
+               aria-current="page" data-ativo="true">Superior</a>
+            <a class="chip" th:unless="${niv.ativo}"
+               th:href="${niv.url}" th:text="${niv.nome}"
+               data-ativo="false">Superior</a>
           </li>
         </ul>
       </nav>

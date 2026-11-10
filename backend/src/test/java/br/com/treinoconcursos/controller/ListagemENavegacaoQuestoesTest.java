@@ -3,16 +3,25 @@ package br.com.treinoconcursos.controller;
 import br.com.treinoconcursos.IntegracaoTest;
 import br.com.treinoconcursos.model.Alternativa;
 import br.com.treinoconcursos.model.Assunto;
+import br.com.treinoconcursos.model.Banca;
+import br.com.treinoconcursos.model.EsferaOrgao;
 import br.com.treinoconcursos.model.Materia;
+import br.com.treinoconcursos.model.NivelEscolaridade;
+import br.com.treinoconcursos.model.Orgao;
 import br.com.treinoconcursos.model.OrigemQuestao;
 import br.com.treinoconcursos.model.Perfil;
+import br.com.treinoconcursos.model.Prova;
 import br.com.treinoconcursos.model.Questao;
 import br.com.treinoconcursos.model.StatusQuestao;
 import br.com.treinoconcursos.model.TipoQuestao;
 import br.com.treinoconcursos.model.Usuario;
 import br.com.treinoconcursos.repository.AssuntoRepository;
+import br.com.treinoconcursos.repository.BancaRepository;
 import br.com.treinoconcursos.repository.MateriaRepository;
+import br.com.treinoconcursos.repository.OrgaoRepository;
+import br.com.treinoconcursos.repository.ProvaRepository;
 import br.com.treinoconcursos.repository.QuestaoRepository;
+import br.com.treinoconcursos.service.ClassificacaoCacheService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +54,19 @@ class ListagemENavegacaoQuestoesTest extends IntegracaoTest {
     private AssuntoRepository assuntoRepository;
 
     @Autowired
+    private BancaRepository bancaRepository;
+
+    @Autowired
+    private OrgaoRepository orgaoRepository;
+
+    @Autowired
+    private ProvaRepository provaRepository;
+
+    @Autowired
     private QuestaoRepository questaoRepository;
+
+    @Autowired
+    private ClassificacaoCacheService classificacaoCacheService;
 
     private Usuario autor;
     private Materia portugues;
@@ -53,6 +74,12 @@ class ListagemENavegacaoQuestoesTest extends IntegracaoTest {
     private Assunto sintaxe;
     private Assunto concordancia;
     private Assunto verboHaver;
+    private Banca fgv;
+    private Banca cebraspe;
+    private Orgao tceGo;
+    private Orgao prf;
+    private Prova provaFgvTce2025Superior;
+    private Prova provaCebraspePrf2024Medio;
 
     @BeforeEach
     void prepararDados() {
@@ -87,6 +114,53 @@ class ListagemENavegacaoQuestoesTest extends IntegracaoTest {
         verboHaver.setNome("Verbo haver");
         verboHaver.setSlug("verbo-haver");
         verboHaver = assuntoRepository.save(verboHaver);
+
+        fgv = new Banca();
+        fgv.setNome("Fundação Getulio Vargas");
+        fgv.setSigla("FGV");
+        fgv.setSlug("fgv");
+        fgv = bancaRepository.save(fgv);
+
+        cebraspe = new Banca();
+        cebraspe.setNome("Centro Brasileiro de Pesquisa em Avaliação");
+        cebraspe.setSigla("CEBRASPE");
+        cebraspe.setSlug("cebraspe");
+        cebraspe = bancaRepository.save(cebraspe);
+
+        tceGo = new Orgao();
+        tceGo.setNome("Tribunal de Contas do Estado de Goiás");
+        tceGo.setSigla("TCE-GO");
+        tceGo.setSlug("tce-go");
+        tceGo.setEsfera(EsferaOrgao.ESTADUAL);
+        tceGo.setUf("GO");
+        tceGo = orgaoRepository.save(tceGo);
+
+        prf = new Orgao();
+        prf.setNome("Polícia Rodoviária Federal");
+        prf.setSigla("PRF");
+        prf.setSlug("prf");
+        prf.setEsfera(EsferaOrgao.FEDERAL);
+        prf = orgaoRepository.save(prf);
+
+        provaFgvTce2025Superior = new Prova();
+        provaFgvTce2025Superior.setBanca(fgv);
+        provaFgvTce2025Superior.setOrgao(tceGo);
+        provaFgvTce2025Superior.setAno(2025);
+        provaFgvTce2025Superior.setCargo("Auditor de Controle Externo");
+        provaFgvTce2025Superior.setNivel(NivelEscolaridade.SUPERIOR);
+        provaFgvTce2025Superior.setSlug("fgv-tce-go-2025-auditor");
+        provaFgvTce2025Superior = provaRepository.save(provaFgvTce2025Superior);
+
+        provaCebraspePrf2024Medio = new Prova();
+        provaCebraspePrf2024Medio.setBanca(cebraspe);
+        provaCebraspePrf2024Medio.setOrgao(prf);
+        provaCebraspePrf2024Medio.setAno(2024);
+        provaCebraspePrf2024Medio.setCargo("Agente Administrativo");
+        provaCebraspePrf2024Medio.setNivel(NivelEscolaridade.MEDIO);
+        provaCebraspePrf2024Medio.setSlug("cebraspe-prf-2024-agente");
+        provaCebraspePrf2024Medio = provaRepository.save(provaCebraspePrf2024Medio);
+
+        classificacaoCacheService.invalidar();
     }
 
     @Test
@@ -259,13 +333,231 @@ class ListagemENavegacaoQuestoesTest extends IntegracaoTest {
                 .andExpect(jsonPath("$", hasSize(0)));
     }
 
+    @Test
+    void rotasDedicadasDeBancaOrgaoEAnoFiltramOrdenamPorIdEExibemChipsNaInterface() throws Exception {
+        Questao q1Fgv = novaQuestaoComProva(
+                portugues, sintaxe, provaFgvTce2025Superior, "Questão 1 FGV TCE 2025", TipoQuestao.MULTIPLA_ESCOLHA);
+        Questao q2Cebraspe = novaQuestaoComProva(
+                direito, null, provaCebraspePrf2024Medio, "Questão 2 CEBRASPE PRF 2024", TipoQuestao.CERTO_ERRADO);
+        Questao q3Fgv = novaQuestaoComProva(
+                direito, null, provaFgvTce2025Superior, "Questão 3 FGV TCE 2025", TipoQuestao.MULTIPLA_ESCOLHA);
+
+        // /questoes/banca/fgv: apenas q1 e q3 em ordem crescente, com chips de banca, orgao, ano e nivel
+        String htmlBanca = mockMvc.perform(get("/questoes/banca/fgv"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Questões da banca FGV")))
+                .andExpect(content().string(containsString("aria-label=\"Filtrar por banca\"")))
+                .andExpect(content().string(containsString("aria-label=\"Filtrar por órgão\"")))
+                .andExpect(content().string(containsString("aria-label=\"Filtrar por ano\"")))
+                .andExpect(content().string(containsString("aria-label=\"Filtrar por nível\"")))
+                .andExpect(content().string(containsString(
+                        "/questao/" + q1Fgv.getId() + "/" + q1Fgv.getSlug() + "?de=banca/fgv")))
+                .andExpect(content().string(containsString(
+                        "/questao/" + q3Fgv.getId() + "/" + q3Fgv.getSlug() + "?de=banca/fgv")))
+                .andExpect(content().string(not(containsString(q2Cebraspe.getEnunciado()))))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(htmlBanca.indexOf("Questão 1 FGV TCE 2025"))
+                .isLessThan(htmlBanca.indexOf("Questão 3 FGV TCE 2025"));
+
+        // /questoes/orgao/prf: apenas q2
+        mockMvc.perform(get("/questoes/orgao/prf"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Questões do órgão PRF")))
+                .andExpect(content().string(containsString(
+                        "/questao/" + q2Cebraspe.getId() + "/" + q2Cebraspe.getSlug() + "?de=orgao/prf")))
+                .andExpect(content().string(not(containsString(q1Fgv.getEnunciado()))));
+
+        // /questoes/ano/2025: apenas q1 e q3
+        mockMvc.perform(get("/questoes/ano/2025"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Questões de 2025")))
+                .andExpect(content().string(containsString(
+                        "/questao/" + q1Fgv.getId() + "/" + q1Fgv.getSlug() + "?de=ano/2025")))
+                .andExpect(content().string(not(containsString(q2Cebraspe.getEnunciado()))));
+
+        // 404 para banca, orgao ou ano inexistente/invalido
+        mockMvc.perform(get("/questoes/banca/banca-inexistente")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/questoes/orgao/orgao-inexistente")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/questoes/ano/1800")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/questoes/ano/nao-numerico")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void combinaFiltrosViaQueryStringNaListagemNaApiDeIdsENaNavegacaoDaQuestao() throws Exception {
+        Questao q1 = novaQuestaoComProva(
+                portugues, sintaxe, provaFgvTce2025Superior, "Q1 Português FGV 2025 Superior", TipoQuestao.MULTIPLA_ESCOLHA);
+        Questao q2 = novaQuestaoComProva(
+                direito, null, provaFgvTce2025Superior, "Q2 Direito FGV 2025 Superior", TipoQuestao.MULTIPLA_ESCOLHA);
+        Questao q3 = novaQuestaoComProva(
+                portugues, concordancia, provaCebraspePrf2024Medio, "Q3 Português CEBRASPE 2024 Médio", TipoQuestao.CERTO_ERRADO);
+        Questao q4 = novaQuestaoComProva(
+                portugues, verboHaver, provaFgvTce2025Superior, "Q4 Português Subassunto FGV 2025 Superior", TipoQuestao.MULTIPLA_ESCOLHA);
+
+        // Combinacao materia=portugues + banca=fgv -> apenas q1 e q4
+        mockMvc.perform(get("/questoes")
+                        .param("materia", "portugues")
+                        .param("banca", "fgv"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(q1.getEnunciado())))
+                .andExpect(content().string(containsString(q4.getEnunciado())))
+                .andExpect(content().string(not(containsString(q2.getEnunciado()))))
+                .andExpect(content().string(not(containsString(q3.getEnunciado()))))
+                .andExpect(content().string(containsString("?de=materia=portugues,banca=fgv")));
+
+        // Filtro por nivel=MEDIO e tipo=CERTO_ERRADO -> apenas q3
+        mockMvc.perform(get("/questoes")
+                        .param("nivel", "MEDIO")
+                        .param("tipo", "CERTO_ERRADO"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(q3.getEnunciado())))
+                .andExpect(content().string(not(containsString(q1.getEnunciado()))));
+
+        // API /api/questoes/ids com filtros de banca, orgao, ano, nivel e tipo
+        mockMvc.perform(get("/api/questoes/ids")
+                        .param("materia", "portugues")
+                        .param("banca", "fgv")
+                        .param("ano", "2025")
+                        .param("nivel", "SUPERIOR")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.itens", is(List.of(q1.getId(), q4.getId()))));
+
+        mockMvc.perform(get("/api/questoes/ids")
+                        .param("orgao", "prf")
+                        .param("tipo", "CERTO_ERRADO")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.itens", is(List.of(q3.getId()))));
+
+        // Navegacao na pagina da questao mantendo ?de=banca/fgv e ?de=materia=portugues,banca=fgv
+        mockMvc.perform(get("/questao/" + q1.getId() + "/" + q1.getSlug())
+                        .param("de", "materia=portugues,banca=fgv"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(
+                        "href=\"/questao/" + q4.getId() + "/" + q4.getSlug() + "?de=materia=portugues,banca=fgv\"")))
+                .andExpect(content().string(containsString("href=\"/questoes?materia=portugues&amp;banca=fgv\"")));
+    }
+
+    @Test
+    void aplicaNoindexAbaixoDe10QuestoesOuCom3OuMaisFiltrosEIncluiNoSitemapApenasConteudoSuficiente() throws Exception {
+        // Com apenas 5 questoes publicadas para FGV / TCE-GO / 2025 / Portugues (< 10): todas recebem noindex
+        for (int i = 1; i <= 5; i++) {
+            novaQuestaoComProva(
+                    portugues,
+                    sintaxe,
+                    provaFgvTce2025Superior,
+                    "Questão FGV lote inicial " + i,
+                    TipoQuestao.MULTIPLA_ESCOLHA);
+        }
+
+        mockMvc.perform(get("/questoes/banca/fgv"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<meta name=\"robots\" content=\"noindex\">")));
+
+        mockMvc.perform(get("/questoes/orgao/tce-go"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<meta name=\"robots\" content=\"noindex\">")));
+
+        mockMvc.perform(get("/questoes/ano/2025"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<meta name=\"robots\" content=\"noindex\">")));
+
+        // Sitemap de paginas nao inclui filtros com menos de 10 questoes
+        mockMvc.perform(get("/sitemaps/paginas.xml"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<loc>http://localhost:8080/questoes</loc>")))
+                .andExpect(content().string(not(containsString("/questoes/banca/fgv"))))
+                .andExpect(content().string(not(containsString("/questoes/orgao/tce-go"))))
+                .andExpect(content().string(not(containsString("/questoes/ano/2025"))))
+                .andExpect(content().string(not(containsString("/questoes/portugues"))));
+
+        // Cadastra mais 5 questoes (total = 10 questoes publicadas >= MINIMO_QUESTOES_INDEXAVEL)
+        for (int i = 6; i <= 10; i++) {
+            novaQuestaoComProva(
+                    portugues,
+                    concordancia,
+                    provaFgvTce2025Superior,
+                    "Questão FGV lote complementar " + i,
+                    TipoQuestao.MULTIPLA_ESCOLHA);
+        }
+
+        // Com 10 questoes: rotas dedicadas (1 filtro) e combinacoes de ate 2 filtros ficam indexaveis (sem noindex)
+        mockMvc.perform(get("/questoes/banca/fgv"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("noindex"))));
+
+        mockMvc.perform(get("/questoes/orgao/tce-go"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("noindex"))));
+
+        mockMvc.perform(get("/questoes/ano/2025"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("noindex"))));
+
+        mockMvc.perform(get("/questoes/portugues"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("noindex"))));
+
+        mockMvc.perform(get("/questoes/portugues/sintaxe"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("noindex"))));
+
+        mockMvc.perform(get("/questoes")
+                        .param("banca", "fgv")
+                        .param("ano", "2025"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("noindex"))));
+
+        // RF07 RN4: a partir de 3 filtros combinados, SEMPRE recebe noindex mesmo tendo 10+ questoes
+        mockMvc.perform(get("/questoes")
+                        .param("materia", "portugues")
+                        .param("banca", "fgv")
+                        .param("ano", "2025"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Questão FGV lote inicial 1")))
+                .andExpect(content().string(containsString("<meta name=\"robots\" content=\"noindex\">")));
+
+        mockMvc.perform(get("/questoes")
+                        .param("banca", "fgv")
+                        .param("orgao", "tce-go")
+                        .param("ano", "2025")
+                        .param("nivel", "SUPERIOR"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<meta name=\"robots\" content=\"noindex\">")));
+
+        // Sitemap de paginas agora inclui materia, assunto (com subassuntos = 10), banca, orgao e ano com 10+ questoes,
+        // mas continua omitindo cebraspe/prf/2024 (0 questoes) e concordancia-verbal isolada (5 questoes < 10)
+        mockMvc.perform(get("/sitemaps/paginas.xml"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<loc>http://localhost:8080/questoes/portugues</loc>")))
+                .andExpect(content().string(containsString("<loc>http://localhost:8080/questoes/portugues/sintaxe</loc>")))
+                .andExpect(content().string(containsString("<loc>http://localhost:8080/questoes/banca/fgv</loc>")))
+                .andExpect(content().string(containsString("<loc>http://localhost:8080/questoes/orgao/tce-go</loc>")))
+                .andExpect(content().string(containsString("<loc>http://localhost:8080/questoes/ano/2025</loc>")))
+                .andExpect(content().string(not(containsString("/questoes/portugues/concordancia-verbal"))))
+                .andExpect(content().string(not(containsString("/questoes/banca/cebraspe"))))
+                .andExpect(content().string(not(containsString("/questoes/orgao/prf"))));
+    }
+
     private Questao novaQuestao(Materia materia, Assunto assunto, String enunciado, StatusQuestao status) {
+        return salvarQuestao(materia, assunto, null, enunciado, TipoQuestao.MULTIPLA_ESCOLHA, status);
+    }
+
+    private Questao novaQuestaoComProva(
+            Materia materia, Assunto assunto, Prova prova, String enunciado, TipoQuestao tipo) {
+        return salvarQuestao(materia, assunto, prova, enunciado, tipo, StatusQuestao.PUBLICADA);
+    }
+
+    private Questao salvarQuestao(
+            Materia materia, Assunto assunto, Prova prova, String enunciado, TipoQuestao tipo, StatusQuestao status) {
         Questao q = new Questao();
         q.setMateria(materia);
         q.setAssunto(assunto);
+        q.setProva(prova);
         q.setAutor(autor);
-        q.setTipo(TipoQuestao.MULTIPLA_ESCOLHA);
-        q.setOrigem(OrigemQuestao.AUTORAL);
+        q.setTipo(tipo);
+        q.setOrigem(prova != null ? OrigemQuestao.PROVA : OrigemQuestao.AUTORAL);
         q.setEnunciado(enunciado);
         q.setSlug("questao-" + System.nanoTime());
         q.setStatus(status);
@@ -273,8 +565,13 @@ class ListagemENavegacaoQuestoesTest extends IntegracaoTest {
             q.setComentario("Comentário da questão.");
             q.setPublicadoEm(LocalDateTime.now(relogio));
         }
-        q.adicionarAlternativa(new Alternativa("A", "Alternativa A", true));
-        q.adicionarAlternativa(new Alternativa("B", "Alternativa B", false));
+        if (tipo == TipoQuestao.CERTO_ERRADO) {
+            q.adicionarAlternativa(new Alternativa("C", "Certo", true));
+            q.adicionarAlternativa(new Alternativa("E", "Errado", false));
+        } else {
+            q.adicionarAlternativa(new Alternativa("A", "Alternativa A", true));
+            q.adicionarAlternativa(new Alternativa("B", "Alternativa B", false));
+        }
         return questaoRepository.save(q);
     }
 }

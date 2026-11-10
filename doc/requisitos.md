@@ -299,7 +299,7 @@ A coluna **Fase** indica em qual etapa do [plano de implementação](plano-de-im
   - **RN1:** É PERMITIDO combinar os filtros matéria, assunto (inclui os subassuntos), banca, órgão, ano, nível e tipo. Os filtros por matéria e assunto são entregues na Fase 1; os demais, na Fase 3.
   - **RN2:** As questões são SEMPRE ordenadas pelo id em ordem crescente. Questões novas entram no fim da sequência.
   - **RN3:** A paginação é feita por cursor ("questões depois do id X"), NUNCA por número de página, para que a posição do visitante não mude quando novas questões forem cadastradas.
-  - **RN4:** As combinações principais têm endereço próprio e indexável (ex.: `/questoes/portugues/crase`, `/questoes/banca/fgv`). Combinações com três ou mais filtros usam parâmetros na URL e recebem `noindex`.
+  - **RN4:** As combinações principais têm endereço próprio (`/questoes/{materia}`, `/questoes/{materia}/{assunto}`, `/questoes/banca/{banca}`, `/questoes/orgao/{orgao}` e `/questoes/ano/{ano}`) e só são indexáveis (e incluídas no sitemap) quando possuem conteúdo suficiente (10 ou mais questões publicadas); abaixo disso, ou em combinações com três ou mais filtros via parâmetros na URL, recebem `noindex`.
   - **RN5:** SE nenhum resultado for encontrado, ENTÃO o sistema exibe uma mensagem e sugere remover filtros (e não exibe anúncio).
 
 #### RF08. Página Pública da Questão

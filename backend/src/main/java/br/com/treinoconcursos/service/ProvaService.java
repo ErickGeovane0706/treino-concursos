@@ -24,13 +24,16 @@ public class ProvaService {
     private final QuestaoRepository questaoRepository;
     private final BancaService bancaService;
     private final OrgaoService orgaoService;
+    private final ClassificacaoCacheService classificacaoCacheService;
 
     public ProvaService(ProvaRepository provaRepository, QuestaoRepository questaoRepository,
-            BancaService bancaService, OrgaoService orgaoService) {
+            BancaService bancaService, OrgaoService orgaoService,
+            ClassificacaoCacheService classificacaoCacheService) {
         this.provaRepository = provaRepository;
         this.questaoRepository = questaoRepository;
         this.bancaService = bancaService;
         this.orgaoService = orgaoService;
+        this.classificacaoCacheService = classificacaoCacheService;
     }
 
     @Transactional(readOnly = true)
@@ -56,7 +59,9 @@ public class ProvaService {
         if (provaRepository.existsBySlug(prova.getSlug())) {
             throw slugRepetido(prova.getSlug());
         }
-        return ProvaResponse.de(provaRepository.save(prova));
+        Prova salva = provaRepository.save(prova);
+        classificacaoCacheService.invalidar();
+        return ProvaResponse.de(salva);
     }
 
     @Transactional
@@ -71,6 +76,7 @@ public class ProvaService {
         if (provaRepository.existsBySlugAndIdNot(prova.getSlug(), id)) {
             throw slugRepetido(prova.getSlug());
         }
+        classificacaoCacheService.invalidar();
         return ProvaResponse.de(prova);
     }
 
@@ -82,6 +88,7 @@ public class ProvaService {
             throw new RegraNegocioException("A prova tem questões e não pode ser excluída.");
         }
         provaRepository.deleteById(id);
+        classificacaoCacheService.invalidar();
     }
 
     Prova buscarEntidade(Integer id) {

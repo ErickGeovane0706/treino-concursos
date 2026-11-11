@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<!--/*
+  Lista de simulados publicados (RF13, US05). Indexavel; vazia recebe noindex (RF12 RN4: sem anuncio).
+*/-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina('Simulados',
+        'Simulados gratuitos para concursos públicos, com correção no final, desempenho por matéria e gabarito.',
+        ${!#lists.isEmpty(simulados)}, ${ {} }, ~{::.conteudo})}">
+<body>
+  <section class="conteudo card">
+    <h1>Simulados</h1>
+    <p class="subtitulo-secao">
+      Responda como na prova: a correção aparece só no final, com o desempenho por matéria e o gabarito.
+    </p>
+
+    <p th:if="${#lists.isEmpty(simulados)}" class="aviso-fim-filtro">
+      Ainda não há simulados publicados. Enquanto isso, <a href="/questoes">treine pelas questões</a>.
+    </p>
+
+    <ul class="lista-simulados" th:unless="${#lists.isEmpty(simulados)}">
+      <li class="item-simulado" th:each="s : ${simulados}">
+        <h2><a th:href="${s.url}" th:text="${s.titulo}">Simulado de Português nº 1</a></h2>
+        <p th:if="${s.descricao != null}" th:text="${s.descricao}">Descrição</p>
+        <p class="meta-simulado">
+          <span th:text="${s.totalQuestoes} + ' questões'">10 questões</span>
+          <th:block th:if="${s.tempoSugeridoMin != null}">
+            <span aria-hidden="true">·</span>
+            <span th:text="${s.tempoSugeridoMin} + ' min sugeridos'">30 min sugeridos</span>
+          </th:block>
+        </p>
+      </li>
+    </ul>
+  </section>
+</body>
+</html>

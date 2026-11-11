@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<!--/*
+  Questao n do simulado (RF13 RN1-RN2, US05). Noindex. Sem gabarito nem comentario no HTML:
+  a correcao so aparece no resultado. A ilha simulado.tsx marca a resposta e a guarda no
+  localStorage (chave por simulado); a navegacao entre questoes sao links para paginas novas,
+  cada uma com anuncio seguindo RF12 (bloco fora da ilha, 100 px dos elementos clicaveis).
+*/-->
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: cabecalho(${questao.tituloSimulado + ' – questão ' + questao.n}, null, false, ${ {'src/ilhas/simulado.tsx'} })}"></head>
+<body>
+  <th:block th:replace="~{layout :: topo}"></th:block>
+
+  <main id="conteudo" class="wrap">
+    <div class="conteudo layout-questao" th:classappend="${#site.adsEnabled} ? 'com-anuncio-lateral'">
+      <article class="card questao">
+        <div class="meta">
+          <a th:href="${questao.apresentacaoUrl}" th:text="${questao.tituloSimulado}">Simulado</a>
+          <span th:text="'Questão ' + ${questao.n} + ' de ' + ${questao.total}">Questão 1 de 10</span>
+        </div>
+        <div class="bar" aria-hidden="true"><i th:style="'width:' + ${questao.percentualAndamento()} + '%'"></i></div>
+
+        <div class="meta">
+          <span th:text="${questao.nomeMateria}">Português</span>
+          <span class="origem" th:text="${questao.fonte}">Questão autoral</span>
+        </div>
+
+        <h1 class="identificacao-questao" th:text="'Questão ' + ${questao.n}">Questão 1</h1>
+        <div class="enunciado texto" th:utext="${questao.enunciadoHtml}"></div>
+
+        <div data-ilha="simulado-questao"
+             th:attr="data-slug=${questao.slugSimulado},
+                      data-id=${questao.idQuestao},
+                      data-n=${questao.n},
+                      data-total=${questao.total},
+                      data-tempo=${questao.tempoSugeridoMin},
+                      data-resultado-url=${questao.resultadoUrl},
+                      data-primeira-url=${questao.primeiraUrl}">
+          <ul class="opts">
+            <li th:each="alt : ${questao.alternativas}">
+              <button type="button" class="opt" th:attr="data-letra=${alt.letra}">
+                <span class="l" th:text="${alt.letra}">A</span>
+                <span class="opt-texto" th:utext="${alt.textoHtml}">Alternativa</span>
+              </button>
+            </li>
+          </ul>
+          <noscript>
+            <p class="aviso-armazenamento">Ative o JavaScript para marcar e guardar as respostas do simulado.</p>
+          </noscript>
+        </div>
+
+        <!--/* RF12 RN1-RN3: bloco principal entre as alternativas e os botoes, com 100 px de espaco */-->
+        <div class="espaco-anuncio-questao" data-espaco-anuncio="true" aria-hidden="true" th:unless="${#site.adsEnabled}"></div>
+        <aside class="bloco-anuncio bloco-anuncio-questao espaco-anuncio-questao"
+               th:if="${#site.adsEnabled}"
+               data-bloco-anuncio="questao"
+               data-espaco-anuncio="true"
+               th:attr="data-ads-enabled=${#site.adsEnabled},
+                        data-ad-client=${!#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
+                        data-ad-slot=${!#strings.isEmpty(#site.adsenseSlotQuestao) ? #site.adsenseSlotQuestao : null},
+                        data-consentimento-atual=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"
+               aria-label="Publicidade">
+          <span class="rotulo-anuncio">Publicidade</span>
+          <div class="area-anuncio" data-area-anuncio>
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-format="horizontal"
+                 data-full-width-responsive="false"
+                 th:attr="data-ad-client=${!#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
+                          data-ad-slot=${!#strings.isEmpty(#site.adsenseSlotQuestao) ? #site.adsenseSlotQuestao : null},
+                          data-npa=${#site.anunciosNaoPersonalizados ? '1' : null},
+                          data-consentimento-aplicado=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"></ins>
+          </div>
+        </aside>
+
+        <div class="acoes-treino">
+          <a class="btn btn-bloco" th:if="${questao.proximaUrl != null}" th:href="${questao.proximaUrl}"
+             rel="next" data-proxima>Próxima questão</a>
+          <a class="btn btn-bloco" th:if="${questao.proximaUrl == null}" th:href="${questao.resultadoUrl}"
+             data-finalizar>Finalizar simulado</a>
+        </div>
+
+        <nav class="navegacao-questao" aria-label="Navegação do simulado">
+          <a class="link-nav" th:if="${questao.anteriorUrl != null}" th:href="${questao.anteriorUrl}" rel="prev">
+            ← Questão anterior
+          </a>
+          <a class="link-nav" th:if="${questao.proximaUrl != null}" th:href="${questao.resultadoUrl}" data-finalizar>
+            Finalizar agora
+          </a>
+        </nav>
+      </article>
+
+      <!--/* RF12 RN1: bloco lateral somente em telas com largura >= 1024 px */-->
+      <aside class="bloco-anuncio bloco-anuncio-lateral"
+             th:if="${#site.adsEnabled}"
+             data-bloco-anuncio="lateral"
+             th:attr="data-ads-enabled=${#site.adsEnabled},
+                      data-ad-client=${!#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
+                      data-ad-slot=${!#strings.isEmpty(#site.adsenseSlotLateral) ? #site.adsenseSlotLateral : null},
+                      data-consentimento-atual=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"
+             aria-label="Publicidade">
+        <span class="rotulo-anuncio">Publicidade</span>
+        <div class="area-anuncio" data-area-anuncio>
+          <ins class="adsbygoogle"
+               style="display:block"
+               data-ad-format="rectangle"
+               data-full-width-responsive="false"
+               th:attr="data-ad-client=${!#strings.isEmpty(#site.adsenseClientId) ? #site.adsenseClientId : null},
+                        data-ad-slot=${!#strings.isEmpty(#site.adsenseSlotLateral) ? #site.adsenseSlotLateral : null},
+                        data-npa=${#site.anunciosNaoPersonalizados ? '1' : null},
+                        data-consentimento-aplicado=${#site.anunciosPersonalizados ? 'personalizados' : 'nao-personalizados'}"></ins>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <th:block th:replace="~{layout :: rodape(${ {'src/ilhas/simulado.tsx'} })}"></th:block>
+</body>
+</html>

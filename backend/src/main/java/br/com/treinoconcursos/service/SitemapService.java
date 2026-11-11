@@ -2,6 +2,7 @@ package br.com.treinoconcursos.service;
 
 import br.com.treinoconcursos.config.SiteConfig;
 import br.com.treinoconcursos.dto.QuestaoSitemap;
+import br.com.treinoconcursos.dto.SimuladoPaginasView;
 import br.com.treinoconcursos.dto.UltimaAtualizacao;
 import br.com.treinoconcursos.model.Assunto;
 import br.com.treinoconcursos.model.Banca;
@@ -57,6 +58,7 @@ public class SitemapService {
     private final AssuntoRepository assuntoRepository;
     private final BancaRepository bancaRepository;
     private final OrgaoRepository orgaoRepository;
+    private final SimuladoPublicoService simuladoPublicoService;
     private final SiteConfig site;
     private final Clock relogio;
 
@@ -66,6 +68,7 @@ public class SitemapService {
             AssuntoRepository assuntoRepository,
             BancaRepository bancaRepository,
             OrgaoRepository orgaoRepository,
+            SimuladoPublicoService simuladoPublicoService,
             SiteConfig site,
             Clock relogio) {
         this.questaoRepository = questaoRepository;
@@ -73,6 +76,7 @@ public class SitemapService {
         this.assuntoRepository = assuntoRepository;
         this.bancaRepository = bancaRepository;
         this.orgaoRepository = orgaoRepository;
+        this.simuladoPublicoService = simuladoPublicoService;
         this.site = site;
         this.relogio = relogio;
     }
@@ -166,6 +170,13 @@ public class SitemapService {
             if (info.id() != null && info.total() >= minimo) {
                 item(xml, "url", "/questoes/ano/" + info.id(), info.em());
             }
+        }
+
+        // RF13: lista e apresentacao dos simulados publicados (as questoes e o resultado tem noindex)
+        List<SimuladoPaginasView.Cartao> simulados = simuladoPublicoService.listarPublicados();
+        if (!simulados.isEmpty()) {
+            item(xml, "url", "/simulados", null);
+            simulados.forEach(s -> item(xml, "url", s.url(), null));
         }
 
         for (String caminho : PAGINAS_FIXAS) {

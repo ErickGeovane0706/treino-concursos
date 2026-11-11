@@ -10,9 +10,22 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+import java.util.Optional;
+
 public interface SimuladoRepository extends JpaRepository<Simulado, Integer> {
 
     boolean existsBySlug(String slug);
+
+    Optional<Simulado> findBySlug(String slug);
+
+    /** RF13: simulados do site, do mais recente para o mais antigo. */
+    @Query("""
+            select s from Simulado s
+            where s.status = br.com.treinoconcursos.model.StatusSimulado.PUBLICADO
+            order by s.publicadoEm desc, s.id desc
+            """)
+    List<Simulado> listarPublicados();
 
     boolean existsBySlugAndIdNot(String slug, Integer id);
 

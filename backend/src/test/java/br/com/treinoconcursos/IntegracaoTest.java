@@ -68,7 +68,7 @@ public abstract class IntegracaoTest {
 
     @BeforeEach
     void limparBanco() {
-        jdbc.execute("TRUNCATE reportes_erro, alternativas, questoes, provas, orgaos, bancas, assuntos, materias, usuarios "
+        jdbc.execute("TRUNCATE simulado_questoes, simulados, reportes_erro, alternativas, questoes, provas, orgaos, bancas, assuntos, materias, usuarios "
                 + "RESTART IDENTITY CASCADE");
         relogio.reiniciar();
         limitadorPorIpService.limpar();

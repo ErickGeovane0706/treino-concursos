@@ -158,6 +158,8 @@ class PaginaQuestaoTest extends IntegracaoTest {
                 .doesNotContain("data-proxima>");
         // RF12 RN5: com ADS_ENABLED=false nao ha bloco nem rotulo de anuncio, so o espaco reservado
         assertThat(html).doesNotContain("Publicidade").doesNotContain("data-bloco-anuncio");
+        // Sem bloco lateral, a coluna de 300 px nao e reservada em telas >= 1024 px
+        assertThat(html).contains("layout-questao").doesNotContain("com-anuncio-lateral");
         Matcher matcherTitulo = Pattern.compile("<title>(.*?)</title>").matcher(html);
         assertThat(matcherTitulo.find()).isTrue();
         assertThat(matcherTitulo.group(1).length()).isLessThanOrEqualTo(60);

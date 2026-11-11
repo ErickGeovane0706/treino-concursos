@@ -627,7 +627,8 @@ h1 {
 }
 
 @media (min-width: 1024px) {
-  .layout-questao {
+  /* A coluna so existe quando o bloco lateral e renderizado (ADS_ENABLED=true, RF12 RN5) */
+  .layout-questao.com-anuncio-lateral {
     grid-template-columns: minmax(0, 1fr) 300px;
     column-gap: 104px;
   }

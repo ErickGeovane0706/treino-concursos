@@ -14,7 +14,7 @@
   <th:block th:replace="~{layout :: topo}"></th:block>
 
   <main id="conteudo" class="wrap">
-    <div class="conteudo layout-questao">
+    <div class="conteudo layout-questao" th:classappend="${#site.adsEnabled} ? 'com-anuncio-lateral'">
       <article class="card questao">
         <div class="meta">
           <nav class="trilha" aria-label="Classificação da questão">

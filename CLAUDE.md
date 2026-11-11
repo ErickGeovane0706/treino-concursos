@@ -11,6 +11,7 @@ Banco de questões para concursos públicos, **gratuito, sem limite diário e se
 | Rotas, JSON, erros, paginação, segurança | `doc/api.md` |
 | Como rodar, testar e como frontend e backend se encaixam | `doc/ambiente-de-desenvolvimento.md` |
 | Deploy em VPS, Docker de produção, Cloudflare, backup e restauração | `doc/deploy.md` |
+| Medições de desempenho (RNF03), desvios e como repetir a carga | `doc/desempenho.md` |
 | Ordem de implementação e escopo de cada issue | `doc/plano-de-implementacao.md` |
 | Referência visual (cores, modo treino, modo simulado) | `doc/prototipo.html` |
 

@@ -13,6 +13,7 @@ import br.com.treinoconcursos.model.Usuario;
 import br.com.treinoconcursos.repository.AssuntoRepository;
 import br.com.treinoconcursos.repository.MateriaRepository;
 import br.com.treinoconcursos.repository.QuestaoRepository;
+import br.com.treinoconcursos.service.NavegacaoQuestoesService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -126,14 +127,25 @@ class SeoTecnicoTest extends IntegracaoTest {
         mockMvc.perform(get("/sitemaps/questoes-0.xml")).andExpect(status().isNotFound());
     }
 
-    /** Listagens so com questao publicada (as vazias tem noindex); o subassunto conta para o pai. */
+    /**
+     * Listagens so com 10+ questoes publicadas (RF07 RN4: abaixo disso tem noindex);
+     * o subassunto conta para o pai.
+     */
     @Test
     void sitemapDePaginasTemListagensComQuestoesEInstitucionais() throws Exception {
         Materia inativa = novaMateria("Inativa", "inativa", false);
         Questao naInativa = novaQuestao(null, StatusQuestao.PUBLICADA);
         naInativa.setMateria(inativa);
         questaoRepository.save(naInativa);
-        novaQuestao(concordancia, StatusQuestao.PUBLICADA);
+        Materia poucas = novaMateria("Direito", "direito", true);
+        for (int i = 0; i < NavegacaoQuestoesService.MINIMO_QUESTOES_INDEXAVEL - 1; i++) {
+            Questao q = novaQuestao(null, StatusQuestao.PUBLICADA);
+            q.setMateria(poucas);
+            questaoRepository.save(q);
+        }
+        for (int i = 0; i < NavegacaoQuestoesService.MINIMO_QUESTOES_INDEXAVEL; i++) {
+            novaQuestao(concordancia, StatusQuestao.PUBLICADA);
+        }
 
         String paginas = xml("/sitemaps/paginas.xml");
 
@@ -148,7 +160,9 @@ class SeoTecnicoTest extends IntegracaoTest {
                 SITE + "/privacidade",
                 SITE + "/termos",
                 SITE + "/cookies");
-        assertThat(paginas).doesNotContain(semQuestoes.getSlug()).doesNotContain("/questoes/inativa");
+        assertThat(paginas).doesNotContain(semQuestoes.getSlug())
+                .doesNotContain("/questoes/inativa")
+                .doesNotContain("/questoes/direito");
     }
 
     /** RF09 RN3: canonica sem ?de=, mas com o cursor da listagem; Open Graph basico. */
@@ -174,16 +188,26 @@ class SeoTecnicoTest extends IntegracaoTest {
                 .andExpect(content().string(containsString("<link rel=\"canonical\" href=\"" + SITE + "/sobre\">")));
     }
 
-    /** RF09 RN3 e doc/api.md secao 2: noindex so onde a tabela manda (e na lista vazia). */
+    /**
+     * RF09 RN3 e doc/api.md secao 2: noindex so onde a tabela manda, na lista vazia
+     * e no recorte com menos de 10 questoes (RF07 RN4).
+     */
     @Test
     void noindexNasRotasCertas() throws Exception {
-        novaQuestao(sintaxe, StatusQuestao.PUBLICADA);
+        for (int i = 0; i < NavegacaoQuestoesService.MINIMO_QUESTOES_INDEXAVEL; i++) {
+            novaQuestao(sintaxe, StatusQuestao.PUBLICADA);
+        }
+        Questao unica = novaQuestao(null, StatusQuestao.PUBLICADA);
+        unica.setMateria(novaMateria("Direito", "direito", true));
+        questaoRepository.save(unica);
 
         mockMvc.perform(get("/meu-progresso"))
                 .andExpect(content().string(containsString("<meta name=\"robots\" content=\"noindex\">")));
-        mockMvc.perform(get("/questoes/matematica"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("<meta name=\"robots\" content=\"noindex\">")));
+        for (String naoIndexavel : List.of("/questoes/matematica", "/questoes/direito")) {
+            mockMvc.perform(get(naoIndexavel))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(containsString("<meta name=\"robots\" content=\"noindex\">")));
+        }
         for (String indexavel : List.of("/", "/questoes", "/questoes/portugues", "/questoes/portugues/sintaxe", "/sobre")) {
             mockMvc.perform(get(indexavel))
                     .andExpect(status().isOk())

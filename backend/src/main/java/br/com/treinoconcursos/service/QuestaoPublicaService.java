@@ -1,6 +1,7 @@
 package br.com.treinoconcursos.service;
 
 import br.com.treinoconcursos.config.SiteConfig;
+import br.com.treinoconcursos.dto.FiltroQuestoes;
 import br.com.treinoconcursos.dto.QuestaoPaginaView;
 import br.com.treinoconcursos.dto.QuestaoPaginaView.AlternativaView;
 import br.com.treinoconcursos.dto.ReferenciaQuestao;
@@ -83,11 +84,15 @@ public class QuestaoPublicaService {
         Materia materia = questao.getMateria();
         Assunto assunto = questao.getAssunto();
         boolean origemCaderno = "caderno".equals(filtro) || (filtro != null && filtro.startsWith("caderno/"));
+        FiltroQuestoes filtroObj = !origemCaderno ? FiltroQuestoes.deChaveFiltro(filtro) : null;
         String listagemUrl;
         String rotuloListagem;
         if (origemCaderno) {
             listagemUrl = "/caderno-de-erros";
             rotuloListagem = "Caderno de erros";
+        } else if (filtroObj != null && (filtroObj.temFiltroDeProva() || filtroObj.tipo() != null)) {
+            listagemUrl = filtroObj.urlListagem(null);
+            rotuloListagem = navegacaoService.rotuloListagemDeFiltro(filtroObj);
         } else {
             listagemUrl = assunto != null
                     ? "/questoes/" + materia.getSlug() + "/" + assunto.getSlug()

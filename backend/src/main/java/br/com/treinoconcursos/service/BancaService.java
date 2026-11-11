@@ -20,10 +20,13 @@ public class BancaService {
 
     private final BancaRepository bancaRepository;
     private final ProvaRepository provaRepository;
+    private final ClassificacaoCacheService classificacaoCacheService;
 
-    public BancaService(BancaRepository bancaRepository, ProvaRepository provaRepository) {
+    public BancaService(BancaRepository bancaRepository, ProvaRepository provaRepository,
+            ClassificacaoCacheService classificacaoCacheService) {
         this.bancaRepository = bancaRepository;
         this.provaRepository = provaRepository;
+        this.classificacaoCacheService = classificacaoCacheService;
     }
 
     @Transactional(readOnly = true)
@@ -58,7 +61,9 @@ public class BancaService {
         banca.setNome(nome);
         banca.setSigla(sigla);
         banca.setSlug(slug);
-        return BancaResponse.de(bancaRepository.save(banca));
+        Banca salva = bancaRepository.save(banca);
+        classificacaoCacheService.invalidar();
+        return BancaResponse.de(salva);
     }
 
     @Transactional
@@ -81,6 +86,7 @@ public class BancaService {
         }
         banca.setNome(nome);
         banca.setSigla(sigla);
+        classificacaoCacheService.invalidar();
         return BancaResponse.de(banca);
     }
 
@@ -92,6 +98,7 @@ public class BancaService {
             throw new RegraNegocioException("A banca tem provas cadastradas e não pode ser excluída.");
         }
         bancaRepository.deleteById(id);
+        classificacaoCacheService.invalidar();
     }
 
     Banca buscarEntidade(Integer id) {

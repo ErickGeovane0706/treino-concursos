@@ -23,10 +23,13 @@ public class OrgaoService {
 
     private final OrgaoRepository orgaoRepository;
     private final ProvaRepository provaRepository;
+    private final ClassificacaoCacheService classificacaoCacheService;
 
-    public OrgaoService(OrgaoRepository orgaoRepository, ProvaRepository provaRepository) {
+    public OrgaoService(OrgaoRepository orgaoRepository, ProvaRepository provaRepository,
+            ClassificacaoCacheService classificacaoCacheService) {
         this.orgaoRepository = orgaoRepository;
         this.provaRepository = provaRepository;
+        this.classificacaoCacheService = classificacaoCacheService;
     }
 
     @Transactional(readOnly = true)
@@ -53,7 +56,9 @@ public class OrgaoService {
         Orgao orgao = new Orgao();
         orgao.setSlug(slug);
         preencher(orgao, request);
-        return OrgaoResponse.de(orgaoRepository.save(orgao));
+        Orgao salvo = orgaoRepository.save(orgao);
+        classificacaoCacheService.invalidar();
+        return OrgaoResponse.de(salvo);
     }
 
     @Transactional
@@ -67,6 +72,7 @@ public class OrgaoService {
             orgao.setSlug(slug);
         }
         preencher(orgao, request);
+        classificacaoCacheService.invalidar();
         return OrgaoResponse.de(orgao);
     }
 
@@ -78,6 +84,7 @@ public class OrgaoService {
             throw new RegraNegocioException("O órgão tem provas cadastradas e não pode ser excluído.");
         }
         orgaoRepository.deleteById(id);
+        classificacaoCacheService.invalidar();
     }
 
     Orgao buscarEntidade(Integer id) {

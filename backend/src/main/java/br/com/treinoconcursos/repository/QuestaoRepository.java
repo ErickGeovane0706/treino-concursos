@@ -1,10 +1,11 @@
 package br.com.treinoconcursos.repository;
 
 import br.com.treinoconcursos.dto.QuestaoSitemap;
-import br.com.treinoconcursos.dto.UltimaAtualizacao;
 import br.com.treinoconcursos.dto.ReferenciaQuestao;
+import br.com.treinoconcursos.dto.UltimaAtualizacao;
 import br.com.treinoconcursos.model.Questao;
 import br.com.treinoconcursos.model.StatusQuestao;
+import br.com.treinoconcursos.model.TipoQuestao;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -118,6 +119,90 @@ public interface QuestaoRepository extends JpaRepository<Questao, Integer> {
     Optional<ReferenciaQuestao> anteriorPublicadaPorAssuntos(@Param("idsAssunto") Collection<Integer> idsAssunto,
             @Param("id") Integer id);
 
+    @Query("""
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.prova.id = :idProva
+              and q.id > :id
+            order by q.id asc
+            limit 1
+            """)
+    Optional<ReferenciaQuestao> proximaPublicadaPorProva(@Param("idProva") Integer idProva,
+            @Param("id") Integer id);
+
+    @Query("""
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.prova.id = :idProva
+              and q.id < :id
+            order by q.id desc
+            limit 1
+            """)
+    Optional<ReferenciaQuestao> anteriorPublicadaPorProva(@Param("idProva") Integer idProva,
+            @Param("id") Integer id);
+
+    @Query("""
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.prova.id in :idsProva
+              and q.id > :id
+            order by q.id asc
+            limit 1
+            """)
+    Optional<ReferenciaQuestao> proximaPublicadaPorProvas(@Param("idsProva") Collection<Integer> idsProva,
+            @Param("id") Integer id);
+
+    @Query("""
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.prova.id in :idsProva
+              and q.id < :id
+            order by q.id desc
+            limit 1
+            """)
+    Optional<ReferenciaQuestao> anteriorPublicadaPorProvas(@Param("idsProva") Collection<Integer> idsProva,
+            @Param("id") Integer id);
+
+    @Query("""
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and (:idMateria is null or q.materia.id = :idMateria)
+              and (:filtrarAssuntos = false or q.assunto.id in :idsAssunto)
+              and (:filtrarProvas = false or q.prova.id in :idsProva)
+              and (:tipo is null or q.tipo = :tipo)
+              and q.id > :id
+            order by q.id asc
+            limit 1
+            """)
+    Optional<ReferenciaQuestao> proximaPublicadaCombinada(
+            @Param("idMateria") Integer idMateria,
+            @Param("filtrarAssuntos") boolean filtrarAssuntos,
+            @Param("idsAssunto") Collection<Integer> idsAssunto,
+            @Param("filtrarProvas") boolean filtrarProvas,
+            @Param("idsProva") Collection<Integer> idsProva,
+            @Param("tipo") TipoQuestao tipo,
+            @Param("id") Integer id);
+
+    @Query("""
+            select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and (:idMateria is null or q.materia.id = :idMateria)
+              and (:filtrarAssuntos = false or q.assunto.id in :idsAssunto)
+              and (:filtrarProvas = false or q.prova.id in :idsProva)
+              and (:tipo is null or q.tipo = :tipo)
+              and q.id < :id
+            order by q.id desc
+            limit 1
+            """)
+    Optional<ReferenciaQuestao> anteriorPublicadaCombinada(
+            @Param("idMateria") Integer idMateria,
+            @Param("filtrarAssuntos") boolean filtrarAssuntos,
+            @Param("idsAssunto") Collection<Integer> idsAssunto,
+            @Param("filtrarProvas") boolean filtrarProvas,
+            @Param("idsProva") Collection<Integer> idsProva,
+            @Param("tipo") TipoQuestao tipo,
+            @Param("id") Integer id);
+
     /** RF07 RN2-RN3: listagem publica por cursor em ordem crescente de id. */
     @EntityGraph(attributePaths = {"materia", "assunto", "prova", "prova.banca", "prova.orgao"})
     @Query("""
@@ -159,6 +244,28 @@ public interface QuestaoRepository extends JpaRepository<Questao, Integer> {
             order by q.id asc
             """)
     java.util.List<Questao> listarPublicadasPorAssuntosDepoisDe(@Param("idsAssunto") Collection<Integer> idsAssunto,
+            @Param("depoisDe") Integer depoisDe, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"materia", "assunto", "prova", "prova.banca", "prova.orgao"})
+    @Query("""
+            select q from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.prova.id = :idProva
+              and q.id > :depoisDe
+            order by q.id asc
+            """)
+    java.util.List<Questao> listarPublicadasPorProvaDepoisDe(@Param("idProva") Integer idProva,
+            @Param("depoisDe") Integer depoisDe, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"materia", "assunto", "prova", "prova.banca", "prova.orgao"})
+    @Query("""
+            select q from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.prova.id in :idsProva
+              and q.id > :depoisDe
+            order by q.id asc
+            """)
+    java.util.List<Questao> listarPublicadasPorProvasDepoisDe(@Param("idsProva") Collection<Integer> idsProva,
             @Param("depoisDe") Integer depoisDe, Pageable pageable);
 
     /** RF11 RN1-RN2, US04: dados minimos das questoes publicadas para o caderno de erros em ordem crescente de id. */
@@ -210,16 +317,45 @@ public interface QuestaoRepository extends JpaRepository<Questao, Integer> {
     java.util.List<Integer> buscarIdsPublicadasPorAssuntosDepoisDe(@Param("idsAssunto") Collection<Integer> idsAssunto,
             @Param("depoisDe") Integer depoisDe, Pageable pageable);
 
-    /** Lista do painel: filtros opcionais (null ou busca vazia = sem filtro); busca no enunciado. */
-    @EntityGraph(attributePaths = "materia")
     @Query("""
-            select q from Questao q
-            where (:status is null or q.status = :status)
-              and (:idMateria is null or q.materia.id = :idMateria)
-              and (:busca = '' or lower(q.enunciado) like lower(concat('%', :busca, '%')))
+            select q.id from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.prova.id = :idProva
+              and q.id > :depoisDe
+            order by q.id asc
             """)
-    Page<Questao> buscar(@Param("status") StatusQuestao status, @Param("idMateria") Integer idMateria,
-            @Param("busca") String busca, Pageable pageable);
+    java.util.List<Integer> buscarIdsPublicadasPorProvaDepoisDe(@Param("idProva") Integer idProva,
+            @Param("depoisDe") Integer depoisDe, Pageable pageable);
+
+    @Query("""
+            select q.id from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.prova.id in :idsProva
+              and q.id > :depoisDe
+            order by q.id asc
+            """)
+    java.util.List<Integer> buscarIdsPublicadasPorProvasDepoisDe(@Param("idsProva") Collection<Integer> idsProva,
+            @Param("depoisDe") Integer depoisDe, Pageable pageable);
+
+    @Query("""
+            select q.id from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and (:idMateria is null or q.materia.id = :idMateria)
+              and (:filtrarAssuntos = false or q.assunto.id in :idsAssunto)
+              and (:filtrarProvas = false or q.prova.id in :idsProva)
+              and (:tipo is null or q.tipo = :tipo)
+              and q.id > :depoisDe
+            order by q.id asc
+            """)
+    java.util.List<Integer> buscarIdsPublicadasCombinadasDepoisDe(
+            @Param("idMateria") Integer idMateria,
+            @Param("filtrarAssuntos") boolean filtrarAssuntos,
+            @Param("idsAssunto") Collection<Integer> idsAssunto,
+            @Param("filtrarProvas") boolean filtrarProvas,
+            @Param("idsProva") Collection<Integer> idsProva,
+            @Param("tipo") TipoQuestao tipo,
+            @Param("depoisDe") Integer depoisDe,
+            Pageable pageable);
 
     /**
      * RF09 RN1: blocos de ids do sitemap ({@code (id - 1) / tamanho + 1}) que tem questao
@@ -244,24 +380,65 @@ public interface QuestaoRepository extends JpaRepository<Questao, Integer> {
             """)
     java.util.List<QuestaoSitemap> publicadasParaSitemap(@Param("depoisDe") int depoisDe, @Param("ate") int ate);
 
-    /** RF09 RN1: ultima alteracao das listagens de materia (so as que tem questao publicada). */
+    /** RF09 RN1 / RF07 RN4: contagem e ultima alteracao por materia. */
     @Query("""
-            select new br.com.treinoconcursos.dto.UltimaAtualizacao(q.materia.id, max(q.atualizadoEm))
+            select new br.com.treinoconcursos.dto.UltimaAtualizacao(q.materia.id, count(q.id), max(q.atualizadoEm))
             from Questao q
             where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
             group by q.materia.id
             """)
     java.util.List<UltimaAtualizacao> ultimaAtualizacaoPorMateria();
 
-    /** RF09 RN1: o mesmo por assunto direto (os subassuntos sao somados no servico). */
+    /** RF09 RN1 / RF07 RN4: contagem e ultima alteracao por assunto direto. */
     @Query("""
-            select new br.com.treinoconcursos.dto.UltimaAtualizacao(q.assunto.id, max(q.atualizadoEm))
+            select new br.com.treinoconcursos.dto.UltimaAtualizacao(q.assunto.id, count(q.id), max(q.atualizadoEm))
             from Questao q
             where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
               and q.assunto is not null
             group by q.assunto.id
             """)
     java.util.List<UltimaAtualizacao> ultimaAtualizacaoPorAssunto();
+
+    /** RF09 RN1 / RF07 RN4: contagem e ultima alteracao por banca. */
+    @Query("""
+            select new br.com.treinoconcursos.dto.UltimaAtualizacao(q.prova.banca.id, count(q.id), max(q.atualizadoEm))
+            from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.prova is not null
+            group by q.prova.banca.id
+            """)
+    java.util.List<UltimaAtualizacao> ultimaAtualizacaoPorBanca();
+
+    /** RF09 RN1 / RF07 RN4: contagem e ultima alteracao por orgao. */
+    @Query("""
+            select new br.com.treinoconcursos.dto.UltimaAtualizacao(q.prova.orgao.id, count(q.id), max(q.atualizadoEm))
+            from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.prova is not null
+            group by q.prova.orgao.id
+            """)
+    java.util.List<UltimaAtualizacao> ultimaAtualizacaoPorOrgao();
+
+    /** RF09 RN1 / RF07 RN4: contagem e ultima alteracao por ano da prova. */
+    @Query("""
+            select new br.com.treinoconcursos.dto.UltimaAtualizacao(q.prova.ano, count(q.id), max(q.atualizadoEm))
+            from Questao q
+            where q.status = br.com.treinoconcursos.model.StatusQuestao.PUBLICADA
+              and q.prova is not null
+            group by q.prova.ano
+            """)
+    java.util.List<UltimaAtualizacao> ultimaAtualizacaoPorAno();
+
+    /** Lista do painel: filtros opcionais (null ou busca vazia = sem filtro); busca no enunciado. */
+    @EntityGraph(attributePaths = "materia")
+    @Query("""
+            select q from Questao q
+            where (:status is null or q.status = :status)
+              and (:idMateria is null or q.materia.id = :idMateria)
+              and (:busca = '' or lower(q.enunciado) like lower(concat('%', :busca, '%')))
+            """)
+    Page<Questao> buscar(@Param("status") StatusQuestao status, @Param("idMateria") Integer idMateria,
+            @Param("busca") String busca, Pageable pageable);
 
     /** RF04 RN5: gabarito mudou, as estatisticas (RF17) deixam de valer. */
     @Modifying(flushAutomatically = true)

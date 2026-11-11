@@ -98,6 +98,35 @@ describe('Ilha de listagem e página Meu progresso (RF10 RN1-RN6, US03, RNF06)',
     expect(aoNavegar).toHaveBeenCalledWith('/questao/11?de=portugues');
   });
 
+  it('"Continuar de onde parei" funciona com filtro de banca e combinação de filtros (RF07 RN1, RN4)', async () => {
+    const user = userEvent.setup();
+    registrarResposta(5, 'A', true, 'materia=portugues,banca=fgv');
+
+    const raiz = document.createElement('section');
+    const aoNavegar = vi.fn();
+    const fetchMock = vi.fn(async () =>
+      new Response(JSON.stringify({ itens: [8], proximoCursor: null }), { status: 200 }),
+    ) as unknown as typeof fetch;
+
+    render(
+      <IlhaListagem
+        raiz={raiz}
+        filtro="materia=portugues,banca=fgv"
+        temListaQuestoes={true}
+        aoNavegar={aoNavegar}
+        fetchFn={fetchMock}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Continuar de onde parei' }));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/questoes/ids?materia=portugues&banca=fgv&depoisDe=5',
+      expect.any(Object),
+    );
+    expect(aoNavegar).toHaveBeenCalledWith('/questao/8?de=materia=portugues,banca=fgv');
+  });
+
   it('oferece reiniciar do início quando não há questão não resolvida após a última vista (RN3)', async () => {
     const user = userEvent.setup();
     registrarResposta(20, 'B', true, 'portugues/crase');

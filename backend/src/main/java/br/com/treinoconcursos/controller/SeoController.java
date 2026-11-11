@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 /**
- * Arquivos de raiz para os buscadores (RF09 RN1-RN2, US14). Nao e API: fica fora
+ * Arquivos de raiz para os buscadores (RF07 RN4, RF09 RN1-RN2, US14). Nao e API: fica fora
  * de /api, que o robots.txt bloqueia.
  */
 @Controller

@@ -245,13 +245,29 @@ describe('Módulo de progresso local (RF10 RN1-RN7, US03, RNF06)', () => {
     expect(parametrosFiltroIds('todas')).toEqual({});
     expect(parametrosFiltroIds('portugues')).toEqual({ materia: 'portugues' });
     expect(parametrosFiltroIds('portugues/crase')).toEqual({ materia: 'portugues', assunto: 'crase' });
+    expect(parametrosFiltroIds('banca/fgv')).toEqual({ banca: 'fgv' });
+    expect(parametrosFiltroIds('orgao/tce-go')).toEqual({ orgao: 'tce-go' });
+    expect(parametrosFiltroIds('ano/2025')).toEqual({ ano: '2025' });
+    expect(parametrosFiltroIds('nivel/SUPERIOR')).toEqual({ nivel: 'SUPERIOR' });
+    expect(parametrosFiltroIds('tipo/CERTO_ERRADO')).toEqual({ tipo: 'CERTO_ERRADO' });
+    expect(parametrosFiltroIds('materia=portugues,banca=fgv,ano=2025')).toEqual({
+      materia: 'portugues',
+      banca: 'fgv',
+      ano: '2025',
+    });
 
     expect(urlQuestaoPorId(42, 'todas')).toBe('/questao/42');
     expect(urlQuestaoPorId(42, 'portugues/crase')).toBe('/questao/42?de=portugues/crase');
+    expect(urlQuestaoPorId(42, 'banca/fgv')).toBe('/questao/42?de=banca/fgv');
 
     expect(urlListagemDoFiltro(null)).toBe('/questoes');
     expect(urlListagemDoFiltro('portugues')).toBe('/questoes/portugues');
     expect(urlListagemDoFiltro('portugues/crase')).toBe('/questoes/portugues/crase');
+    expect(urlListagemDoFiltro('banca/fgv')).toBe('/questoes/banca/fgv');
+    expect(urlListagemDoFiltro('orgao/tce-go')).toBe('/questoes/orgao/tce-go');
+    expect(urlListagemDoFiltro('ano/2025')).toBe('/questoes/ano/2025');
+    expect(urlListagemDoFiltro('nivel/SUPERIOR')).toBe('/questoes?nivel=SUPERIOR');
+    expect(urlListagemDoFiltro('materia=portugues,banca=fgv')).toBe('/questoes?materia=portugues&banca=fgv');
   });
 
   it('escolhe a primeira questão não resolvida depois da última vista em uma lista de ids (RN3, RN4)', () => {

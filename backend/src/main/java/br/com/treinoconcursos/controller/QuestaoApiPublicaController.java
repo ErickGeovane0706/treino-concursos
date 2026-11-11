@@ -1,6 +1,7 @@
 package br.com.treinoconcursos.controller;
 
 import br.com.treinoconcursos.dto.EstatisticasQuestaoResponse;
+import br.com.treinoconcursos.dto.FiltroQuestoes;
 import br.com.treinoconcursos.dto.QuestaoCadernoResponse;
 import br.com.treinoconcursos.dto.QuestoesIdsResponse;
 import br.com.treinoconcursos.dto.ReporteErroPublicoResponse;
@@ -54,9 +55,15 @@ public class QuestaoApiPublicaController {
     public QuestoesIdsResponse listarIds(
             @RequestParam(required = false) String materia,
             @RequestParam(required = false) String assunto,
+            @RequestParam(required = false) String banca,
+            @RequestParam(required = false) String orgao,
+            @RequestParam(required = false) String ano,
+            @RequestParam(required = false) String nivel,
+            @RequestParam(required = false) String tipo,
             @RequestParam(required = false) Integer depoisDe,
             @RequestParam(required = false) Integer limite) {
-        return navegacaoService.buscarIds(materia, assunto, depoisDe, limite);
+        FiltroQuestoes filtro = FiltroQuestoes.deParametros(materia, assunto, banca, orgao, ano, nivel, tipo);
+        return navegacaoService.buscarIds(filtro, depoisDe, limite);
     }
 
     @Operation(summary = "Buscar dados mínimos de questões publicadas por ids para o caderno de erros", description = "Perfil: público (RF11, US04)")

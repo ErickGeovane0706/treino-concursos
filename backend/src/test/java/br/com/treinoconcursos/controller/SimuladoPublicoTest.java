@@ -168,6 +168,39 @@ class SimuladoPublicoTest extends IntegracaoTest {
         assertThat(html.split("data-correta=").length - 1).isEqualTo(5);
     }
 
+    /**
+     * RF15 RN1-RN4: comentarios de todas as questoes em pagina separada, noindex, sempre
+     * acessivel (quem pode pedir o anuncio com recompensa e o Offerwall do AdSense).
+     */
+    @Test
+    void comentariosAbremNormalmenteComTodasAsQuestoes() throws Exception {
+        List<Integer> ids = publicadas(portugues, 5);
+        String slug = publicar(enviarSimulado("Simulado", null, ids));
+        enviar(patch("/api/admin/questoes/" + ids.get(4) + "/marcar-desatualizada"), null).andExpect(status().isOk());
+
+        String html = mockMvc.perform(get("/simulado/" + slug + "/comentarios"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(html).contains(NOINDEX)
+                .contains("Comentários do simulado")
+                .contains("Gabarito: B")
+                .contains("id=\"questao-4\"")
+                .doesNotContain("id=\"questao-5\"")
+                .doesNotContain("Publicidade")
+                .doesNotContain("adsbygoogle")
+                .doesNotContain("Assistir anúncio");
+        assertThat(html.split("Comentário da questão").length - 1).isEqualTo(4);
+
+        // RF15 RN1: o resultado leva aos comentarios; o gabarito continua gratis la
+        mockMvc.perform(get("/simulado/" + slug + "/resultado"))
+                .andExpect(content().string(allOf(
+                        containsString("href=\"/simulado/" + slug + "/comentarios\""),
+                        containsString("data-comentarios-url=\"/simulado/" + slug + "/comentarios\""),
+                        not(containsString("Comentário da questão")))));
+        mockMvc.perform(get("/simulado/nao-existe/comentarios")).andExpect(status().isNotFound());
+    }
+
     @Test
     void sitemapEMenuTemOsSimulados() throws Exception {
         String slug = publicado("Simulado de Português", null);

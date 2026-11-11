@@ -565,3 +565,51 @@ Antes de avançar para a Fase 2 (solicitação e ativação do Google AdSense):
 - [ ] O backup diário rodou, enviou cópia para o bucket externo e o teste de restauração funcionou sem erros.
 - [ ] O monitor do UptimeRobot está ativo e enviou o e-mail de teste.
 - [ ] **Meta de conteúdo antes de pedir o AdSense:** acesse `/admin` e **cadastre de 200 a 300 questões públicas com comentários próprios e detalhados** explicando por que a alternativa certa está certa e por que as demais estão erradas. Nunca solicite a aprovação do AdSense com o site vazio ou com poucas questões.
+
+---
+
+## 11. Offerwall do AdSense nos comentários do simulado (RF15, US06)
+
+O site **não** bloqueia nada nem tem "anúncio simulado" (RF15 RN3). A página `/simulado/{slug}/comentarios` é normal e sempre mostra o conteúdo. Quem pode pedir um anúncio com recompensa antes da leitura é a mensagem **Offerwall** do AdSense, configurada no painel do Google. Se não houver anúncio disponível, o Google não mostra a mensagem e a página abre direto (RF15 RN4).
+
+O que o código já faz:
+- A página de comentários tem `noindex` e carrega o script do AdSense **logo na abertura**, e não depois da primeira interação como nas outras páginas, para a mensagem aparecer antes da leitura.
+- Com `ADS_ENABLED=false`, nenhum script é carregado, e o Offerwall não aparece.
+- O resultado do simulado (gabarito e desempenho) continua grátis e tem o botão **Ver comentários** (RF15 RN1).
+
+### 11.1 Pré-requisitos
+
+- [ ] Conta do AdSense aprovada e site com status **Pronto**.
+- [ ] `ADS_ENABLED=true` e `ADSENSE_PUBLISHER_ID` preenchidos no `.env` de produção (seção 5.2), com a aplicação reiniciada.
+- [ ] Pelo menos um simulado publicado, com a página `/simulado/{slug}/comentarios` abrindo no ar.
+
+### 11.2 Criar a mensagem
+
+1. Entre no AdSense e abra **Privacidade e mensagens** (*Privacy & messaging*).
+2. No cartão **Offerwall**, clique em **Criar** (ou em **Gerenciar** → **Criar mensagem**, se já houver outra).
+3. Em **Selecionar sites**, marque o domínio do site e clique em **Confirmar**.
+4. Em **Adicionar URLs**, use **Adicionar inclusão de página** (*page-include*) e inclua **só** os endereços de comentários, um por simulado publicado:
+   ```
+   page-include /simulado/simulado-de-portugues-n-1/comentarios
+   page-include /simulado/simulado-de-direito-fgv-n-2/comentarios
+   ```
+   Uma inclusão faz a mensagem valer **somente** nesses endereços (RF15 RN2).
+   > A documentação do Google mostra regras por prefixo de caminho (`path-include /pasta/`) e por página (`page-include`), sem curinga. Por isso `/simulado/*/comentarios` **não** funciona como regra única. **Não** use `path-include /simulado/`: ela pegaria também as questões e o resultado, que precisam continuar livres.
+5. Escolha o idioma **Português**.
+6. Em **Medição** (*Metering*), use o menor limite disponível, para a mensagem aparecer já na primeira visita aos comentários. Só as páginas incluídas contam para o limite.
+7. Em **Opções do usuário** (*User choices*), ative **Anúncio com recompensa** (*Rewarded ad*), a única opção disponível no AdSense. Em **Direito de acesso** (*entitlement*), escolha um **tempo de acesso** de algumas horas (por exemplo, 12 horas), para o visitante ler os comentários de todos os simulados sem ver outro anúncio nesse período.
+8. Revise o texto da mensagem: nada de pedir clique em anúncio (RF12 RN3). Clique em **Publicar**.
+
+### 11.3 Testar
+
+1. Abra `https://www.seudominio.com.br/simulado/{slug}/comentarios?fc=alwaysshow&fctype=monetization`. O parâmetro força a mensagem para teste.
+2. Confirme que a mensagem aparece **só** nos comentários: abra `/simulado/{slug}/1` e `/simulado/{slug}/resultado` com o mesmo parâmetro, e ela não deve aparecer.
+3. Sem o parâmetro, numa aba anônima: se não houver anúncio com recompensa disponível, os comentários devem abrir normalmente (RF15 RN4).
+
+### 11.4 Ao publicar um simulado novo
+
+Volte em **Privacidade e mensagens → Offerwall → mensagem → Adicionar URLs** e acrescente o `page-include` do novo simulado. Sem isso, os comentários dele ficam livres, o que não quebra nada, só deixa de monetizar.
+
+> **Se a lista de simulados crescer muito:** trocar o endereço para um prefixo comum (por exemplo, `/comentarios-simulado/{slug}`) permitiria uma única regra `path-include /comentarios-simulado/`. Isso muda o RF15 RN1 e a tabela de rotas do `doc/api.md`, então precisa ser decidido antes.
+
+Referências: [Criar uma mensagem do Offerwall](https://support.google.com/adsense/answer/13866332), [Sobre as mensagens do Offerwall](https://support.google.com/adsense/answer/13865318), [Configurar a opção "Anúncio com recompensa"](https://support.google.com/adsense/answer/12726063).

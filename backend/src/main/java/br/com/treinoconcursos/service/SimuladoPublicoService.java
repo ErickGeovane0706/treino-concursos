@@ -156,7 +156,43 @@ public class SimuladoPublicoService {
                     QuestaoPublicaService.urlCanonica(q.getId(), q.getSlug(), null)));
         }
         return new SimuladoPaginasView.Resultado(simulado.getTitulo(), slug, urlApresentacao(slug),
-                urlQuestao(slug, 1), simulado.getTempoSugeridoMin(), itens);
+                urlQuestao(slug, 1), urlComentarios(slug), simulado.getTempoSugeridoMin(), itens);
+    }
+
+    /**
+     * RF15 RN1-RN4: comentario de cada questao. A pagina e normal: quem pode pedir um
+     * anuncio com recompensa antes de mostra-la e o Offerwall do AdSense, configurado no
+     * painel do Google. Sem anuncio disponivel, o conteudo aparece direto.
+     */
+    @Transactional(readOnly = true)
+    public SimuladoPaginasView.Comentarios comentarios(String slug) {
+        Simulado simulado = publicado(slug);
+        List<Integer> ids = elegiveis(simulado).stream().map(Questao::getId).toList();
+        if (ids.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        Map<Integer, Questao> porId = new HashMap<>();
+        questaoRepository.findComAlternativasByIdIn(ids).forEach(q -> porId.put(q.getId(), q));
+        List<SimuladoPaginasView.ItemComentario> itens = new java.util.ArrayList<>();
+        for (int i = 0; i < ids.size(); i++) {
+            Questao q = porId.get(ids.get(i));
+            String letra = q.getAlternativas().stream().filter(a -> a.isCorreta())
+                    .map(a -> a.getLetra()).findFirst().orElse("");
+            itens.add(new SimuladoPaginasView.ItemComentario(i + 1, q.getId(), q.getMateria().getNome(),
+                    markdownService.paraHtml(q.getEnunciado()),
+                    q.getAlternativas().stream()
+                            .map(a -> new SimuladoPaginasView.AlternativaCorrigida(a.getLetra(),
+                                    markdownService.paraHtml(a.getTexto()), a.isCorreta()))
+                            .toList(),
+                    QuestaoPublicaService.rotuloCorreta(q.getTipo(), letra),
+                    markdownService.paraHtml(q.getComentario())));
+        }
+        return new SimuladoPaginasView.Comentarios(simulado.getTitulo(), slug, urlApresentacao(slug),
+                urlResultado(slug), itens);
+    }
+
+    public static String urlComentarios(String slug) {
+        return "/simulado/" + slug + "/comentarios";
     }
 
     /**

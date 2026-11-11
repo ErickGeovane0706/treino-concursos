@@ -106,6 +106,9 @@ Regras das páginas:
 > Questões: a lista aceita `?status=`, `?idMateria=` e `?busca=` (texto do enunciado). O `POST` cria sempre como `RASCUNHO`, e o `PUT` nunca muda o status (RF05 RN2). `/publicar` vale para rascunho e arquivada. `/anular` e `/marcar-desatualizada` aceitam `?desfazer=true`. `DELETE` só remove questão que nunca foi publicada; as outras são arquivadas. No certo/errado, o texto das alternativas é ignorado e gravado como "Certo" e "Errado". Trocar a letra correta ou o tipo zera as estatísticas (RF04 RN5). O slug vem do início do enunciado e deixa de mudar depois da primeira publicação. `POST /api/admin/previa-markdown` recebe `{ "markdown" }` e devolve `{ "html" }` já sanitizado.
 
 | Simulados | `/api/admin/simulados` (+ `/publicar`, `/arquivar`) | EDITOR |
+
+> Simulados: a lista aceita `?status=` e `?busca=` (título) e traz `totalQuestoes` e `precisaRevisao`. O `POST` cria como `RASCUNHO`; `idsQuestoes` vem na ordem do simulado, e o `PUT` substitui a lista inteira (é assim que o painel reordena). Toda questão enviada precisa estar publicada, não anulada e não desatualizada, sem repetição e no máximo 100 (RF14 RN1 e RN2). O rascunho pode ter menos de 5 enquanto é montado; `/publicar` e o `PUT` de um simulado publicado exigem de 5 a 100. Salvar um simulado publicado limpa `precisaRevisao`, que é ligado quando uma questão dele é arquivada, anulada ou marcada como desatualizada (RF14 RN4). O slug é opcional (vazio gera do título) e não muda depois da primeira publicação. `DELETE` só remove simulado que nunca foi publicado; os outros são arquivados. Para escolher as questões, o painel usa `GET /api/admin/questoes?status=PUBLICADA`.
+
 | Reportes | `/api/admin/reportes-erro` (+ `/resolver`, `/descartar`) | EDITOR |
 | Usuários | `/api/admin/usuarios` (+ `/inativar`, `/reativar`, `/desbloquear`, `/redefinir-senha`) | ADMIN |
 

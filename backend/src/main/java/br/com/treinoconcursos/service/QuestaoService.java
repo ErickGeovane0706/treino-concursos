@@ -43,16 +43,18 @@ public class QuestaoService {
     private final UsuarioRepository usuarioRepository;
     private final MateriaService materiaService;
     private final ProvaService provaService;
+    private final SimuladoService simuladoService;
     private final Clock relogio;
 
     public QuestaoService(QuestaoRepository questaoRepository, AssuntoRepository assuntoRepository,
             UsuarioRepository usuarioRepository, MateriaService materiaService, ProvaService provaService,
-            Clock relogio) {
+            SimuladoService simuladoService, Clock relogio) {
         this.questaoRepository = questaoRepository;
         this.assuntoRepository = assuntoRepository;
         this.usuarioRepository = usuarioRepository;
         this.materiaService = materiaService;
         this.provaService = provaService;
+        this.simuladoService = simuladoService;
         this.relogio = relogio;
     }
 
@@ -143,7 +145,7 @@ public class QuestaoService {
         return QuestaoResponse.de(questao);
     }
 
-    /** RF05 RN3: arquivada responde 410 e sai do sitemap. */
+    /** RF05 RN3: arquivada responde 410 e sai do sitemap; RF14 RN4: sinaliza os simulados publicados. */
     @Transactional
     public QuestaoResponse arquivar(Integer id) {
         Questao questao = buscarEntidade(id);
@@ -152,24 +154,37 @@ public class QuestaoService {
         }
         questao.setStatus(StatusQuestao.ARQUIVADA);
         questao.setAtualizadoEm(LocalDateTime.now(relogio));
+        simuladoService.questaoDeixouDeSerElegivel(id);
         return QuestaoResponse.de(questao);
     }
 
-    /** RF05 RN4: continua publicada, com aviso. {@code anulada = false} desfaz a marcacao. */
+    /**
+     * RF05 RN4: continua publicada, com aviso. {@code anulada = false} desfaz a marcacao.
+     * RF14 RN4: ao anular, sinaliza os simulados publicados que a contem.
+     */
     @Transactional
     public QuestaoResponse anular(Integer id, boolean anulada) {
         Questao questao = buscarEntidade(id);
         questao.setAnulada(anulada);
         questao.setAtualizadoEm(LocalDateTime.now(relogio));
+        if (anulada) {
+            simuladoService.questaoDeixouDeSerElegivel(id);
+        }
         return QuestaoResponse.de(questao);
     }
 
-    /** RF05 RN5: continua publicada, com aviso. {@code desatualizada = false} desfaz a marcacao. */
+    /**
+     * RF05 RN5: continua publicada, com aviso. {@code desatualizada = false} desfaz a marcacao.
+     * RF14 RN4: ao marcar, sinaliza os simulados publicados que a contem.
+     */
     @Transactional
     public QuestaoResponse marcarDesatualizada(Integer id, boolean desatualizada) {
         Questao questao = buscarEntidade(id);
         questao.setDesatualizada(desatualizada);
         questao.setAtualizadoEm(LocalDateTime.now(relogio));
+        if (desatualizada) {
+            simuladoService.questaoDeixouDeSerElegivel(id);
+        }
         return QuestaoResponse.de(questao);
     }
 

@@ -300,3 +300,64 @@ export const reportesErro = {
   descartar: (id: number, observacao: string | null) =>
     requisitar<ReporteErro>('PATCH', `/api/admin/reportes-erro/${id}/descartar`, { observacao }),
 };
+
+// ---------- simulados (US11, RF14) ----------
+
+export type StatusSimulado = 'RASCUNHO' | 'PUBLICADO' | 'ARQUIVADO';
+
+export interface QuestaoDoSimulado {
+  ordem: number;
+  id: number;
+  trecho: string;
+  nomeMateria: string;
+  status: StatusQuestao;
+  anulada: boolean;
+  desatualizada: boolean;
+  elegivel: boolean;
+}
+
+export interface Simulado {
+  id: number;
+  titulo: string;
+  slug: string;
+  descricao: string | null;
+  tempoSugeridoMin: number | null;
+  status: StatusSimulado;
+  precisaRevisao: boolean;
+  nomeAutor: string;
+  criadoEm: string;
+  publicadoEm: string | null;
+  questoes: QuestaoDoSimulado[];
+}
+
+export interface SimuladoResumo {
+  id: number;
+  titulo: string;
+  slug: string;
+  status: StatusSimulado;
+  precisaRevisao: boolean;
+  totalQuestoes: number;
+  publicadoEm: string | null;
+}
+
+export interface DadosSimulado {
+  titulo: string;
+  slug: string;
+  descricao: string | null;
+  tempoSugeridoMin: number | null;
+  idsQuestoes: number[];
+}
+
+export const simulados = {
+  listar: (status: StatusSimulado | '', busca: string, pagina: number) => {
+    const params = new URLSearchParams({ busca, page: String(pagina), size: '20' });
+    if (status) params.set('status', status);
+    return requisitar<Pagina<SimuladoResumo>>('GET', `/api/admin/simulados?${params}`);
+  },
+  buscar: (id: number) => requisitar<Simulado>('GET', `/api/admin/simulados/${id}`),
+  criar: (dados: DadosSimulado) => requisitar<Simulado>('POST', '/api/admin/simulados', dados),
+  atualizar: (id: number, dados: DadosSimulado) => requisitar<Simulado>('PUT', `/api/admin/simulados/${id}`, dados),
+  excluir: (id: number) => requisitar<void>('DELETE', `/api/admin/simulados/${id}`),
+  publicar: (id: number) => requisitar<Simulado>('PATCH', `/api/admin/simulados/${id}/publicar`),
+  arquivar: (id: number) => requisitar<Simulado>('PATCH', `/api/admin/simulados/${id}/arquivar`),
+};

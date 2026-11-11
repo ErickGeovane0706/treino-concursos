@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!--/*
+  Resultado do simulado (RF13 RN3-RN4, US05). Noindex. O gabarito de cada questao vem no HTML
+  (gratuito); a ilha le as respostas salvas neste navegador, calcula percentual, acertos e
+  desempenho por matéria, marca o simulado como finalizado e mostra "em branco" nas questoes
+  sem resposta (que contam como erro).
+*/-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina(${'Resultado – ' + resultado.titulo}, null, false,
+        ${ {'src/ilhas/simulado.tsx'} }, ~{::.conteudo})}">
+<body>
+  <article class="conteudo card">
+    <nav class="trilha" aria-label="Trilha de navegação">
+      <a href="/simulados">Simulados</a>
+      <span aria-hidden="true">›</span>
+      <a th:href="${resultado.apresentacaoUrl}" th:text="${resultado.titulo}">Simulado</a>
+    </nav>
+    <h1>Resultado do simulado</h1>
+
+    <div data-ilha="simulado-resultado"
+         th:attr="data-slug=${resultado.slug},
+                  data-primeira-url=${resultado.primeiraUrl}">
+      <noscript>
+        <p class="aviso-armazenamento">
+          Ative o JavaScript para ver o seu resultado. O gabarito está abaixo.
+        </p>
+      </noscript>
+      <ol class="revs" data-gabarito-simulado>
+        <li class="rev" th:each="item : ${resultado.itens}"
+            th:attr="data-id=${item.idQuestao},
+                     data-materia=${item.nomeMateria},
+                     data-correta=${item.letraCorreta},
+                     data-rotulo-correta=${item.rotuloCorreta},
+                     data-url=${item.questaoUrl}">
+          <div class="rt">
+            <span th:text="${item.n} + '. ' + ${item.trecho}">1. Enunciado</span>
+          </div>
+          <div class="ra">
+            <span th:text="${item.nomeMateria}">Português</span> ·
+            Gabarito: <b th:text="${item.rotuloCorreta}">B</b>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </article>
+</body>
+</html>

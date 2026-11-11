@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<!--/*
+  Apresentacao do simulado (RF13, US05). Indexavel. A ilha mostra "Continuar" e
+  "Ver resultado" quando ha andamento salvo neste navegador (RF13 RN1).
+*/-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina(${simulado.titulo}, ${simulado.metaDescricao}, ${simulado.total > 0},
+        ${ {'src/ilhas/simulado.tsx'} }, ~{::.conteudo})}">
+<body>
+  <article class="conteudo card texto">
+    <nav class="trilha" aria-label="Trilha de navegação">
+      <a href="/simulados">Simulados</a>
+    </nav>
+    <h1 th:text="${simulado.titulo}">Simulado de Português nº 1</h1>
+    <p th:if="${simulado.descricao != null}" th:text="${simulado.descricao}">Descrição</p>
+
+    <ul class="meta-simulado">
+      <li th:text="${simulado.total} + ' questões'">10 questões</li>
+      <li th:if="${simulado.tempoSugeridoMin != null}"
+          th:text="'Tempo sugerido: ' + ${simulado.tempoSugeridoMin} + ' min (com cronômetro)'">Tempo sugerido: 30 min</li>
+      <li>Correção só no final; dá para voltar e trocar respostas até finalizar</li>
+      <li>Gabarito e desempenho por matéria grátis</li>
+    </ul>
+
+    <section th:if="${!#lists.isEmpty(simulado.materias)}" aria-labelledby="titulo-materias-simulado">
+      <h2 id="titulo-materias-simulado" class="subtitulo-secao">Matérias</h2>
+      <ul class="filters">
+        <li th:each="m : ${simulado.materias}">
+          <span class="chip" th:text="${m.nome} + ' (' + ${m.quantidade} + ')'">Português (5)</span>
+        </li>
+      </ul>
+    </section>
+
+    <p th:if="${simulado.total == 0}" class="aviso-fim-filtro">
+      Este simulado está em revisão e volta em breve.
+    </p>
+
+    <div class="acoes" data-ilha="simulado-apresentacao" th:if="${simulado.total > 0}"
+         th:attr="data-slug=${simulado.slug},
+                  data-ids=${#strings.listJoin(simulado.idsQuestoes, ',')},
+                  data-resultado-url=${simulado.resultadoUrl}">
+      <a class="btn" th:href="${simulado.primeiraUrl}">Começar simulado</a>
+    </div>
+  </article>
+</body>
+</html>

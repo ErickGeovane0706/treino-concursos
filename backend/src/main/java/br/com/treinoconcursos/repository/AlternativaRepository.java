@@ -6,9 +6,15 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface AlternativaRepository extends JpaRepository<Alternativa, Integer> {
+
+    /** Gabarito de varias questoes de uma vez (resultado do simulado, RF13 RN3). Linhas: [id_questao, letra]. */
+    @Query("select a.questao.id, a.letra from Alternativa a where a.correta = true and a.questao.id in :ids")
+    List<Object[]> buscarLetrasCorretas(@Param("ids") Collection<Integer> ids);
 
     @Query("select a.correta from Alternativa a where a.questao.id = :idQuestao and a.letra = :letra")
     Optional<Boolean> buscarCorretaPorQuestaoELetra(@Param("idQuestao") Integer idQuestao,

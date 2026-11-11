@@ -47,6 +47,8 @@ Os **endpoints JSON** de cada entidade são documentados no **Swagger**, gerado 
 | `/robots.txt`, `/ads.txt` | Arquivos de raiz | — | RF09, RF12 |
 | `/admin/**` | SPA do painel (React) | bloqueado no robots | RF01 |
 
+> Simulados: só aparecem os `PUBLICADO`; rascunho responde 404 e arquivado responde 410. Dentro do simulado entram só as questões elegíveis (publicadas, não anuladas e não desatualizadas), renumeradas de 1 a N (RF14 RN4), e `{n}` fora desse intervalo responde 404. A página da questão não traz gabarito nem comentário. O resultado traz o gabarito de cada questão no HTML, e a ilha calcula o desempenho com as respostas salvas no navegador (chave `treino-concursos:simulado:{slug}`). Abrir o resultado finaliza o simulado. O cronômetro conta a partir da primeira questão aberta. O sitemap inclui `/simulados` e a apresentação de cada simulado publicado.
+
 Regras das páginas:
 
 - URLs em minúsculas, com hífen, **sem barra no final**. Slugs vindos do banco (`materias.slug`, `assuntos.slug` etc.).

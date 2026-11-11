@@ -36,6 +36,7 @@ export default defineConfig(({ mode }) => {
           consentimento: 'src/consentimento/main.ts',
           'ilha-treino': 'src/ilhas/treino.tsx',
           'ilha-listagem': 'src/ilhas/listagem.tsx',
+          'ilha-simulado': 'src/ilhas/simulado.tsx',
           admin: 'admin/index.html',
         },
       },

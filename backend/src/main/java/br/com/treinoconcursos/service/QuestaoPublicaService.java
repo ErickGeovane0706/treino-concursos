@@ -149,7 +149,7 @@ public class QuestaoPublicaService {
         return "Questão autoral";
     }
 
-    private static String rotuloCorreta(TipoQuestao tipo, String letra) {
+    static String rotuloCorreta(TipoQuestao tipo, String letra) {
         if (tipo == TipoQuestao.CERTO_ERRADO) {
             return "C".equals(letra) ? "C (Certo)" : "E (Errado)";
         }

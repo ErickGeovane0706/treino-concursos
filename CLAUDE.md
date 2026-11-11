@@ -19,7 +19,7 @@ Antes de implementar uma issue, leia a seção dela no plano e os RF/RNF citados
 
 ## Stack
 
-Java 21, Spring Boot 4.1 (MVC, Thymeleaf, Data JPA, Security, Validation, Flyway), PostgreSQL 17, Testcontainers; React 19 + Vite 8 + TypeScript + Tailwind 4 + Vitest. Pacote base: `br.com.treinoconcursos`.
+Java 21, Spring Boot 4.1 (MVC, Thymeleaf, Data JPA, Security, Validation, Flyway), PostgreSQL 17, Testcontainers; React 19 no painel e Preact 10 (`preact/compat`, mesma API do React) nas ilhas públicas + Vite 8 + TypeScript + Tailwind 4 + Vitest. Pacote base: `br.com.treinoconcursos`.
 
 ```
 backend/    Spring Boot: páginas públicas (Thymeleaf), API REST, painel servido em /admin
@@ -40,7 +40,7 @@ cd frontend && npm run build         # build de produção (gera manifest.json)
 
 ## Decisões de arquitetura (não mudar sem conversar)
 
-1. **Páginas públicas renderizadas no servidor (Thymeleaf).** Enunciado, alternativas, gabarito e comentário vêm no HTML, para o Google indexar. React entra só como **ilha** pequena por cima. Nada de SPA na área pública.
+1. **Páginas públicas renderizadas no servidor (Thymeleaf).** Enunciado, alternativas, gabarito e comentário vêm no HTML, para o Google indexar. As ilhas são componentes React pequenos por cima, que em produção rodam com Preact: o `vite.config.ts` troca `react` por `preact/compat` em tudo que está em `frontend/src/`, para caber nos 50 KB de JS do RNF03. Use só APIs que o `preact/compat` suporta. Nada de SPA na área pública.
 2. **"Próxima questão" é um link para uma nova página**, nunca troca de estado no cliente: cada questão é uma visualização de página com anúncio.
 3. **Visitante não tem login.** O progresso fica no `localStorage` (módulo `frontend/src/progresso/`), sempre com try/catch, e o site funciona sem ele.
 4. **Ordem fixa por `id_questao` crescente e paginação por cursor** (`depoisDe`), nunca por número de página.

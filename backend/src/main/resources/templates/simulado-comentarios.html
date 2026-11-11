@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!--/*
+  Comentarios do simulado (RF15 RN1-RN4, US06). Noindex. A pagina e normal e sempre mostra o
+  conteudo: quem pode pedir um anuncio com recompensa antes e o Offerwall do AdSense, configurado
+  no painel do Google so para este caminho (doc/deploy.md). O sistema nao tem contador nem
+  "anuncio simulado" (RN3); sem anuncio disponivel, o AdSense nao mostra a mensagem (RN4).
+*/-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: pagina(${'Comentários – ' + comentarios.titulo}, null, false, ${ {} }, ~{::.conteudo})}">
+<body>
+  <article class="conteudo card">
+    <nav class="trilha" aria-label="Trilha de navegação">
+      <a href="/simulados">Simulados</a>
+      <span aria-hidden="true">›</span>
+      <a th:href="${comentarios.apresentacaoUrl}" th:text="${comentarios.titulo}">Simulado</a>
+      <span aria-hidden="true">›</span>
+      <a th:href="${comentarios.resultadoUrl}">Resultado</a>
+    </nav>
+    <h1>Comentários do simulado</h1>
+    <p class="subtitulo-secao">Veja por que cada alternativa está certa ou errada.</p>
+
+    <ol class="lista-comentarios">
+      <li class="comentario-simulado" th:each="item : ${comentarios.itens}" th:id="'questao-' + ${item.n}">
+        <div class="meta">
+          <span th:text="'Questão ' + ${item.n}">Questão 1</span>
+          <span th:text="${item.nomeMateria}">Português</span>
+        </div>
+        <div class="enunciado texto" th:utext="${item.enunciadoHtml}"></div>
+        <ul class="opts">
+          <li th:each="alt : ${item.alternativas}">
+            <div class="opt" th:classappend="${alt.correta} ? 'ok' : 'dim'">
+              <span class="l" th:text="${alt.letra}">A</span>
+              <span class="opt-texto" th:utext="${alt.textoHtml}">Alternativa</span>
+            </div>
+          </li>
+        </ul>
+        <div class="fb ok">
+          <strong th:text="'Gabarito: ' + ${item.rotuloCorreta}">Gabarito: B</strong>
+          <div class="comentario texto" th:utext="${item.comentarioHtml}"></div>
+        </div>
+      </li>
+    </ol>
+
+    <div class="acoes-resultado">
+      <a class="btn ghost" th:href="${comentarios.resultadoUrl}">Voltar ao resultado</a>
+      <a class="btn ghost" href="/simulados">Outros simulados</a>
+    </div>
+  </article>
+</body>
+</html>

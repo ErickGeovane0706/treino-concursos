@@ -33,6 +33,14 @@
               if (ins.offsetParent !== null) window.adsbygoogle.push({});
             });
           }
+          // Comentarios do simulado (RF15): o Offerwall precisa do script ja na abertura da pagina
+          if (/*[[${carregarAdsenseNaAbertura == true}]]*/ false) {
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', carregarAdsense, { once: true });
+            } else {
+              carregarAdsense();
+            }
+          }
           ['pointerdown', 'keydown', 'touchstart', 'scroll', 'mousemove'].forEach(function (ev) {
             window.addEventListener(ev, carregarAdsense, { once: true, passive: true });
           });

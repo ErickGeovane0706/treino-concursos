@@ -19,7 +19,8 @@
 
     <div data-ilha="simulado-resultado"
          th:attr="data-slug=${resultado.slug},
-                  data-primeira-url=${resultado.primeiraUrl}">
+                  data-primeira-url=${resultado.primeiraUrl},
+                  data-comentarios-url=${resultado.comentariosUrl}">
       <noscript>
         <p class="aviso-armazenamento">
           Ative o JavaScript para ver o seu resultado. O gabarito está abaixo.
@@ -41,6 +42,7 @@
           </div>
         </li>
       </ol>
+      <p><a class="btn" th:href="${resultado.comentariosUrl}">Ver comentários</a></p>
     </div>
   </article>
 </body>

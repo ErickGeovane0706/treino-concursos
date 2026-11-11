@@ -166,10 +166,13 @@ const TEXTO_SITUACAO = { certa: 'Certa', errada: 'Errada', branco: 'Em branco' }
 export function IlhaSimuladoResultado({
   slug,
   primeiraUrl,
+  comentariosUrl,
   gabarito,
 }: {
   slug: string;
   primeiraUrl: string;
+  /** RF15 RN1: comentarios em pagina separada; o gabarito e o desempenho continuam gratis. */
+  comentariosUrl?: string;
   gabarito: (ItemGabarito & { rotuloCorreta: string; trecho?: string })[];
 }) {
   const [estado] = useState<EstadoSimulado>(() => {
@@ -242,6 +245,11 @@ export function IlhaSimuladoResultado({
       </ol>
 
       <div className="acoes-resultado">
+        {comentariosUrl && (
+          <a className="btn" href={comentariosUrl}>
+            Ver comentários
+          </a>
+        )}
         {comecou && (
           <button type="button" className="btn ghost" onClick={refazer}>
             Refazer simulado
@@ -316,10 +324,17 @@ export function iniciarIlhasSimulado(): void {
     return dados ? <IlhaSimuladoQuestao dados={dados} /> : null;
   });
   montarIlha('simulado-resultado', (elemento) => {
-    const { slug, primeiraUrl } = elemento.dataset;
+    const { slug, primeiraUrl, comentariosUrl } = elemento.dataset;
     const gabarito = lerGabarito(elemento);
     if (!slug || !primeiraUrl || gabarito.length === 0) return null;
-    return <IlhaSimuladoResultado slug={slug} primeiraUrl={primeiraUrl} gabarito={gabarito} />;
+    return (
+      <IlhaSimuladoResultado
+        slug={slug}
+        primeiraUrl={primeiraUrl}
+        comentariosUrl={comentariosUrl}
+        gabarito={gabarito}
+      />
+    );
   });
   montarIlha('simulado-apresentacao', (elemento) => {
     const { slug, resultadoUrl } = elemento.dataset;

@@ -1274,3 +1274,17 @@ h1 {
   gap: 12px;
   margin: 22px 0 0;
 }
+
+/* Comentarios do simulado (RF15) */
+.lista-comentarios {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 28px;
+}
+
+.comentario-simulado + .comentario-simulado {
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}

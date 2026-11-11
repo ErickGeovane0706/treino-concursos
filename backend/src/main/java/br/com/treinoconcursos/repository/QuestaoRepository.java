@@ -34,6 +34,10 @@ public interface QuestaoRepository extends JpaRepository<Questao, Integer> {
     @EntityGraph(attributePaths = {"materia", "assunto", "prova", "prova.banca", "prova.orgao", "alternativas"})
     Optional<Questao> findComDetalhesById(Integer id);
 
+    /** Comentarios do simulado (RF15 RN1): varias questoes com materia e alternativas, numa consulta. */
+    @EntityGraph(attributePaths = {"materia", "alternativas"})
+    java.util.List<Questao> findComAlternativasByIdIn(Collection<Integer> ids);
+
     /** RF06 RN3 / RF08 RN4: proxima e anterior publicadas em ordem crescente de id. */
     @Query("""
             select new br.com.treinoconcursos.dto.ReferenciaQuestao(q.id, q.slug) from Questao q

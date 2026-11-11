@@ -149,7 +149,8 @@ describe('Ilhas do simulado (RF13, US05)', () => {
 
   it('monta as ilhas a partir do HTML do servidor', async () => {
     document.body.innerHTML = `
-      <div data-ilha="simulado-resultado" data-slug="pt-1" data-primeira-url="/simulado/pt-1/1">
+      <div data-ilha="simulado-resultado" data-slug="pt-1" data-primeira-url="/simulado/pt-1/1"
+           data-comentarios-url="/simulado/pt-1/comentarios">
         <ol><li data-id="10" data-materia="Português" data-correta="B" data-rotulo-correta="B">
           <div class="rt"><span>1. Crase</span></div></li></ol>
       </div>`;
@@ -157,5 +158,8 @@ describe('Ilhas do simulado (RF13, US05)', () => {
     await act(async () => iniciarIlhasSimulado());
     expect(screen.getByText('100%')).toBeInTheDocument();
     expect(screen.getByText('1. Crase')).toBeInTheDocument();
+    // RF15 RN1: comentarios em pagina separada, sem anuncio simulado no codigo (RN3)
+    expect(screen.getByRole('link', { name: 'Ver comentários' })).toHaveAttribute('href', '/simulado/pt-1/comentarios');
+    expect(document.body.textContent).not.toMatch(/Assistir anúncio|Liberar comentários/);
   });
 });

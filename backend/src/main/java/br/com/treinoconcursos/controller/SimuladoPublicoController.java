@@ -48,4 +48,17 @@ public class SimuladoPublicoController {
         model.addAttribute("resultado", service.resultado(slug));
         return "simulado-resultado";
     }
+
+    /**
+     * RF15 RN1-RN4: comentarios de todas as questoes, com noindex. E o unico endereco
+     * incluido no Offerwall do AdSense (doc/deploy.md); o script carrega logo na abertura
+     * para a mensagem aparecer antes da leitura. Sem ADS_ENABLED, nenhum script.
+     */
+    @GetMapping("/simulado/{slug}/comentarios")
+    public String comentarios(@PathVariable String slug, Model model) {
+        model.addAttribute("comentarios", service.comentarios(slug));
+        model.addAttribute("exibirAnuncios", true);
+        model.addAttribute("carregarAdsenseNaAbertura", true);
+        return "simulado-comentarios";
+    }
 }

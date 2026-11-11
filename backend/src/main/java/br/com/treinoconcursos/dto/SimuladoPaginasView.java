@@ -45,7 +45,19 @@ public final class SimuladoPaginasView {
 
     /** /simulado/{slug}/resultado: gabarito gratuito de cada questao (RF13 RN3). */
     public record Resultado(String titulo, String slug, String apresentacaoUrl, String primeiraUrl,
-            Integer tempoSugeridoMin, List<ItemGabarito> itens) {
+            String comentariosUrl, Integer tempoSugeridoMin, List<ItemGabarito> itens) {
+    }
+
+    /** /simulado/{slug}/comentarios: comentario de cada questao (RF15 RN1). */
+    public record Comentarios(String titulo, String slug, String apresentacaoUrl, String resultadoUrl,
+            List<ItemComentario> itens) {
+    }
+
+    public record ItemComentario(int n, Integer idQuestao, String nomeMateria, String enunciadoHtml,
+            List<AlternativaCorrigida> alternativas, String rotuloCorreta, String comentarioHtml) {
+    }
+
+    public record AlternativaCorrigida(String letra, String textoHtml, boolean correta) {
     }
 
     public record ItemGabarito(int n, Integer idQuestao, String nomeMateria, String trecho, String letraCorreta,

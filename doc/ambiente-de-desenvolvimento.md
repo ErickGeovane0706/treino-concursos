@@ -1,6 +1,6 @@
 # 10. Ambiente de Desenvolvimento e Testes
 
-Esta seção descreve como o ambiente do Treino de Concursos é padronizado com Docker e como as partes (Spring, Thymeleaf, ilhas React e painel React) funcionam juntas em desenvolvimento e em produção.
+Esta seção descreve como o ambiente do Treino de Concursos é padronizado com Docker e como as partes (Spring, Thymeleaf, ilhas com Preact e painel React) funcionam juntas em desenvolvimento e em produção.
 
 ## 10.1 Visão geral
 
@@ -24,7 +24,7 @@ Em desenvolvimento, o backend roda pela IDE (IntelliJ) e o frontend pelo Vite (V
 | Java / Spring Boot | 21 / 4.1 | Backend: páginas (Thymeleaf), API REST, Spring Security |
 | Thymeleaf | o do Spring Boot | Renderização das páginas públicas no servidor |
 | commonmark-java + OWASP Java HTML Sanitizer | atuais | Markdown → HTML seguro (RF04 RN4, RNF01) |
-| Node.js / React / Vite / TypeScript | 22.13+ / 19 / 8 / 5 | Ilhas públicas e SPA do painel |
+| Node.js / React / Preact / Vite / TypeScript | 22.13+ / 19 / 10 / 8 / 5 | React no painel; Preact (`preact/compat`) nas ilhas públicas |
 | Tailwind CSS | 4 | Estilos (tokens de cor do protótipo) |
 | Vitest | atual | Testes da lógica de progresso local |
 
@@ -36,7 +36,7 @@ Navegador ──► Cloudflare (cache das páginas públicas, HTTPS)
                  ▼
           Spring Boot (porta 8080, um único .jar)
           ├── Páginas públicas  → Thymeleaf  (/, /questoes/**, /questao/**, /simulado/**)
-          │       └── carregam as ilhas React  (/assets/ilha-treino-[hash].js)
+          │       └── carregam as ilhas Preact (/assets/ilha-treino-[hash].js)
           ├── Painel            → SPA React   (/admin/**  → index.html do painel)
           ├── API JSON          → /api/**, /api/admin/**
           └── PostgreSQL (mesmo servidor)
@@ -51,6 +51,8 @@ O frontend é **um único projeto Vite com várias entradas** (`build.rollupOpti
 | `ilha-simulado` | `frontend/src/ilhas/simulado.tsx` | Simulado e resultado (Fase 3) |
 | `admin` | `frontend/admin/index.html` | SPA do painel |
 | `consentimento` | `frontend/src/consentimento/main.ts` | Aviso de cookies (RF18 RN2), em todas as páginas públicas; sem React |
+
+As ilhas são escritas com a API do React, mas o plugin `preact-nas-ilhas` do `vite.config.ts` resolve `react`, `react-dom` e `react/jsx-runtime` para o Preact em tudo que é importado por `frontend/src/` (RNF03: JavaScript público ≤ 50 KB gzip; ver `doc/desempenho.md`). O painel em `frontend/admin/` continua no React 19. Nos testes, o Vitest tem dois projetos: `ilhas` (com Preact e `@testing-library/preact` no lugar da `@testing-library/react`) e `painel` (com React). Em dev, editar uma ilha recarrega a página, porque o Fast Refresh só vale para o painel.
 
 A lógica de progresso fica em `frontend/src/progresso/` (TypeScript puro, sem React), testada com Vitest e compartilhada pelas ilhas.
 

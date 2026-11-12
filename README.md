@@ -17,7 +17,7 @@ Banco de questões para concursos públicos **gratuito, sem limite diário e sem
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **Front-end:** [React](https://react.dev/), [Vite](https://vite.dev/), [TypeScript](https://www.typescriptlang.org/), [Tailwind CSS](https://tailwindcss.com/)
+- **Front-end:** [React](https://react.dev/) (painel), [Preact](https://preactjs.com/) com `preact/compat` (ilhas públicas), [Vite](https://vite.dev/), [TypeScript](https://www.typescriptlang.org/), [Tailwind CSS](https://tailwindcss.com/)
 - **Back-end:** [Java](https://www.java.com/), [Spring Boot](https://spring.io/projects/spring-boot) (Spring MVC + Thymeleaf, Spring Data JPA, Spring Security, Bean Validation, Flyway)
 - **Banco de Dados:** [PostgreSQL](https://www.postgresql.org/)
 - **Testes:** JUnit, Testcontainers, Vitest, Playwright
@@ -51,7 +51,7 @@ Banco de questões para concursos públicos **gratuito, sem limite diário e sem
 ```
 treino-concursos/
 ├── backend/             # Spring Boot: páginas públicas (Thymeleaf), API REST e painel
-├── frontend/            # Vite: ilhas React das páginas públicas e SPA do painel
+├── frontend/            # Vite: ilhas (Preact) das páginas públicas e SPA do painel (React)
 ├── doc/                 # Documentação e diagramas
 ├── CLAUDE.md            # Contexto do projeto para o Claude Code
 └── docker-compose.yml   # PostgreSQL de desenvolvimento

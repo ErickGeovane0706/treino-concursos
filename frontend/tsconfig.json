@@ -13,5 +13,5 @@
     "skipLibCheck": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "admin", "vite.config.ts", "vitest.setup.ts"]
+  "include": ["src", "admin", "e2e", "vite.config.ts", "vitest.setup.ts", "playwright.config.ts"]
 }

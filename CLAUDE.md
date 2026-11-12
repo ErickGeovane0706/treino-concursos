@@ -36,6 +36,7 @@ cd backend && ./mvnw test            # testes (precisa do Docker rodando)
 cd frontend && npm run dev           # Vite em :5173 (painel em /admin/)
 cd frontend && npm test              # Vitest
 cd frontend && npm run build         # build de produção (gera manifest.json)
+docker compose -f docker-compose.e2e.yml up -d --build --wait && (cd frontend && npm run e2e)  # Playwright: anúncios a 100 px (RF12)
 ```
 
 ## Decisões de arquitetura (não mudar sem conversar)

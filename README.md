@@ -39,12 +39,135 @@ Banco de questões para concursos públicos **gratuito, sem limite diário e sem
 
 ---
 
-## 🚀 Como Executar o Projeto
+## 🚀 Como Executar o Projeto (passo a passo)
 
-### Pré-requisitos
-- Java 21+
-- Node.js 22+
-- Docker Desktop (o PostgreSQL roda em container)
+O tutorial abaixo sobe o projeto do zero numa máquina nova: banco no Docker, backend Spring Boot e frontend Vite. Leva uns 10 minutos (a maior parte é download na primeira vez).
+
+### 1. Instale os pré-requisitos
+
+| Ferramenta | Versão | Como conferir |
+|---|---|---|
+| [Java (JDK)](https://adoptium.net/) | 21 ou mais nova | `java -version` |
+| [Node.js](https://nodejs.org/) | 22.13 ou mais nova | `node -v` |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | qualquer recente | `docker compose version` |
+| [Git](https://git-scm.com/) | qualquer | `git --version` |
+
+> Não precisa instalar Maven nem PostgreSQL: o projeto traz o Maven Wrapper (`mvnw`) e o banco roda no Docker.
+
+**Abra o Docker Desktop e espere ele ficar "running"** antes de seguir. Sem isso o passo 3 falha com `failed to connect to the docker API`.
+
+### 2. Clone o repositório
+
+```bash
+git clone https://github.com/ErickGeovane0706/treino-concursos.git
+cd treino-concursos
+```
+
+### 3. Suba o banco de dados (PostgreSQL no Docker)
+
+Copie o modelo de variáveis da **raiz** e escolha uma senha para o banco:
+
+```bash
+cp .env.example .env          # no Windows (PowerShell): copy .env.example .env
+```
+
+Abra o `.env` da raiz e preencha **só** `DB_PASSWORD` (ex.: `DB_PASSWORD=senha123`). O resto pode ficar como está em desenvolvimento.
+
+```bash
+docker compose up -d
+docker compose ps             # espere aparecer "healthy"
+```
+
+### 4. Rode o backend (Spring Boot)
+
+```bash
+cd backend
+cp .env.example .env          # no Windows: copy .env.example .env
+```
+
+Abra o `backend/.env` e preencha:
+
+```properties
+DB_PASSWORD=senha123                    # a MESMA senha do .env da raiz
+ADMIN_INICIAL_EMAIL=admin@exemplo.com   # login do painel
+ADMIN_INICIAL_SENHA=Admin@12345         # senha do painel
+```
+
+Depois suba a aplicação:
+
+```bash
+./mvnw spring-boot:run        # no Windows (PowerShell/CMD): .\mvnw.cmd spring-boot:run
+```
+
+Na primeira vez o Maven baixa as dependências (pode demorar alguns minutos). Quando aparecer `Started ...Application`, está no ar:
+
+- Site público: <http://localhost:8080>
+- Swagger da API: <http://localhost:8080/swagger-ui.html>
+
+O Flyway cria as tabelas sozinho e, no perfil `dev`, carrega **questões de exemplo** (`backend/src/main/resources/db/dev/R__dados_exemplo.sql`), então o site já abre com conteúdo. O administrador do `.env` é criado na primeira subida, quando ainda não há usuários.
+
+### 5. Rode o frontend (Vite), em outro terminal
+
+```bash
+cd frontend
+cp .env.example .env          # no Windows: copy .env.example .env
+npm install
+npm run dev
+```
+
+Pronto. Com os dois terminais rodando:
+
+| O quê | Endereço |
+|---|---|
+| Site público (questões, filtros, simulados) | <http://localhost:8080> |
+| Painel administrativo | <http://localhost:5173/admin/> (entre com `ADMIN_INICIAL_EMAIL` / `ADMIN_INICIAL_SENHA`) |
+
+> O site público abre pela porta **8080** (Spring); o Vite na 5173 só fornece os scripts das ilhas e o painel, com hot reload.
+
+### 6. O que testar
+
+1. Abra uma questão, escolha uma alternativa e veja a correção e o comentário.
+2. Clique em **Próxima questão** e depois em **Continuar de onde parei** na listagem.
+3. Filtre por matéria, banca ou órgão.
+4. Faça um **simulado** e veja o resultado por matéria.
+5. No painel, cadastre uma questão em Markdown e publique.
+
+### Rodando os testes
+
+```bash
+cd backend && ./mvnw test     # JUnit + Testcontainers (precisa do Docker aberto)
+cd frontend && npm test       # Vitest
+cd frontend && npm run build  # build de produção
+```
+
+Testes de ponta a ponta (Playwright, distância de 100 px dos anúncios):
+
+```bash
+docker compose -f docker-compose.e2e.yml up -d --build --wait
+cd frontend && npx playwright install chromium   # só na primeira vez
+npm run e2e
+```
+
+### Problemas comuns
+
+| Sintoma | Solução |
+|---|---|
+| `failed to connect to the docker API` | O Docker Desktop não está aberto. Abra e espere ficar "running". |
+| `Defina DB_PASSWORD no .env da raiz` | Faltou o passo 3: criar o `.env` na raiz com `DB_PASSWORD`. |
+| `password authentication failed for user "treino"` | A senha do `backend/.env` é diferente da do `.env` da raiz. Se mudou a senha depois de criar o banco, rode `docker compose down -v` (apaga os dados) e `docker compose up -d`. |
+| `Port 5432 is already in use` | Há outro PostgreSQL na máquina. Troque `DB_PORT` no `.env` da raiz (ex.: `5433`) e a porta em `DB_URL` no `backend/.env`. |
+| `Port 8080 was already in use` | Feche o outro programa ou mude `SERVER_PORT` no `backend/.env`. |
+| `./mvnw: Permission denied` (Linux/macOS) | `chmod +x mvnw` |
+| Painel não aceita o login | O admin só é criado se a tabela de usuários estiver vazia. Confira o `backend/.env` e, se preciso, recrie o banco com `docker compose down -v`. |
+| Página abre sem interatividade (não corrige a questão) | O `npm run dev` não está rodando no frontend. |
+
+### Parar tudo
+
+```bash
+# Ctrl+C nos terminais do backend e do frontend, depois:
+docker compose stop           # para o banco mantendo os dados
+docker compose down -v        # remove o banco E APAGA os dados
+```
 
 ### Estrutura do repositório
 
@@ -53,36 +176,11 @@ treino-concursos/
 ├── backend/             # Spring Boot: páginas públicas (Thymeleaf), API REST e painel
 ├── frontend/            # Vite: ilhas (Preact) das páginas públicas e SPA do painel (React)
 ├── doc/                 # Documentação e diagramas
-├── CLAUDE.md            # Contexto do projeto para o Claude Code
-└── docker-compose.yml   # PostgreSQL de desenvolvimento
+├── deploy/              # Script de backup de produção
+├── docker-compose.yml   # PostgreSQL de desenvolvimento
+└── CLAUDE.md            # Contexto do projeto para o Claude Code
 ```
 
-### Banco de dados
-
-```bash
-docker compose up -d
-```
-
-### Backend
-
-```bash
-cd backend
-cp .env.example .env
-./mvnw spring-boot:run    # no Windows: mvnw.cmd spring-boot:run
-./mvnw test               # testes com PostgreSQL temporário (Testcontainers)
-```
-
-O site sobe em `http://localhost:8080` e o Swagger em `http://localhost:8080/swagger-ui.html`.
-
-### Frontend
-
-```bash
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
-```
-
-O painel fica em `http://localhost:5173/admin/`.
+Detalhes de como as partes se encaixam estão em [doc/ambiente-de-desenvolvimento.md](doc/ambiente-de-desenvolvimento.md); produção em [doc/deploy.md](doc/deploy.md).
 
 ---

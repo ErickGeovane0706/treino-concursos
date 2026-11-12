@@ -41,6 +41,39 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  e2e:
+    name: E2E (Playwright, anúncios em 360 e 1920 px)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sobe o site com ADS_ENABLED=true (docker-compose.e2e.yml)
+        run: docker compose -f docker-compose.e2e.yml up -d --build --wait
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instala dependências e o Chromium do Playwright
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Testes de ponta a ponta
+        working-directory: frontend
+        run: npm run e2e
+      - name: Logs do app (se falhar)
+        if: failure()
+        run: docker compose -f docker-compose.e2e.yml logs app --tail 200
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: relatorio-playwright
+          path: frontend/playwright-report/
+          retention-days: 7
+      - name: Derruba o ambiente
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down -v
+
   segredos:
     name: Varredura de segredos (gitleaks)
     runs-on: ubuntu-latest

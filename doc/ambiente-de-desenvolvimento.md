@@ -113,7 +113,22 @@ Prioridades de teste (meta de 70% nas regras, RNF05):
 
 **Frontend (Vitest):** `frontend/src/progresso/` com cobertura ≥ 70% (registrar resposta, continuar de onde parou, ocultar resolvidas, caderno de erros, limite de 20.000, `localStorage` indisponível).
 
-**CI:** GitHub Actions roda `./mvnw verify` e `npm ci && npm test && npm run build` em cada push.
+**Ponta a ponta (Playwright, `frontend/e2e/`):** roda contra o site de verdade, na imagem de produção com `ADS_ENABLED=true`, em 360 px e 1920 px. Mede a distância entre cada bloco de anúncio e todo elemento clicável (RF12 RN2: ≥ 100 px) na questão, antes e depois de responder, e numa questão do simulado. Também confere:
+- 1 bloco no conteúdo e o lateral só a partir de 1024 px, com o rótulo "Publicidade";
+- que um anúncio maior que o espaço não empurra nenhum botão (CLS);
+- que o layout não quebra com bloqueador de anúncios;
+- que não há anúncio na página de erro nem no painel.
+
+As requisições ao Google são bloqueadas no teste, então nenhum anúncio real é chamado. A preparação cria pela API do painel uma matéria, cinco questões e um simulado novos a cada execução, sem apagar nada.
+
+```bash
+docker compose -f docker-compose.e2e.yml up -d --build --wait   # site em http://127.0.0.1:18081
+cd frontend && npx playwright install chromium                  # só na primeira vez
+npm run e2e                                                     # E2E_BASE_URL muda o endereço
+docker compose -f docker-compose.e2e.yml down -v
+```
+
+**CI:** GitHub Actions roda `./mvnw verify`, `npm ci && npm test && npm run build` e os testes de ponta a ponta (job `e2e`) em cada push e pull request.
 
 ## 10.7 Passo a passo para começar
 

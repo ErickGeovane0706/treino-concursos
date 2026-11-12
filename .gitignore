@@ -27,3 +27,4 @@ test-results/
 # SO
 .DS_Store
 Thumbs.db
+frontend/e2e/.dados.json
